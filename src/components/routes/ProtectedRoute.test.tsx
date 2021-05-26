@@ -1,5 +1,5 @@
 import React from "react";
-import { MemoryRouter, Route } from "react-router-dom";
+import { MemoryRouter, Route, Switch } from "react-router-dom";
 import { act, render, screen } from "@testing-library/react";
 import ProtectedRoute from "./ProtectedRoute";
 import { randomUser } from "fixtures/random";
@@ -7,22 +7,35 @@ import { client } from "services/datastore";
 import MockAdapter from "axios-mock-adapter";
 import { makeUserData } from "services/adaptors";
 import { ProvidersFixture } from "fixtures/context";
+import { useAuth } from "context/auth";
 
 // Mock the HTTP client used by the datastore.
 const mockClient = new MockAdapter(client);
 
-const Fixture = () => (
-  <ProvidersFixture>
-    <MemoryRouter initialEntries={["/"]}>
-      <ProtectedRoute exact path="/">
-        user is authenticated
-      </ProtectedRoute>
-      <Route exact path="/login">
-        user is not authenticated
-      </Route>
-    </MemoryRouter>
-  </ProvidersFixture>
-);
+const Fixture: React.FC = () => {
+  const InnerFixture = () => {
+    const { userInitialised } = useAuth();
+
+    return userInitialised ? (
+      <Switch>
+        <ProtectedRoute exact path="/">
+          user is authenticated
+        </ProtectedRoute>
+        <Route exact path="/login">
+          user is not authenticated
+        </Route>
+      </Switch>
+    ) : null;
+  };
+
+  return (
+    <ProvidersFixture>
+      <MemoryRouter initialEntries={["/"]}>
+        <InnerFixture />
+      </MemoryRouter>
+    </ProvidersFixture>
+  );
+};
 
 beforeEach(() => {
   jest.clearAllMocks();

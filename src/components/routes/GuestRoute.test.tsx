@@ -1,5 +1,5 @@
 import React from "react";
-import { MemoryRouter, Route } from "react-router-dom";
+import { MemoryRouter, Route, Switch } from "react-router-dom";
 import { act, render, screen } from "@testing-library/react";
 import GuestRoute from "./GuestRoute";
 import { randomUser } from "fixtures/random";
@@ -7,6 +7,7 @@ import { client } from "services/datastore";
 import MockAdapter from "axios-mock-adapter";
 import { makeUserData } from "services/adaptors";
 import { ProvidersFixture } from "fixtures/context";
+import { useAuth } from "context/auth";
 
 // Mock the HTTP client used by the datastore.
 const mockClient = new MockAdapter(client);
@@ -14,9 +15,11 @@ const mockClient = new MockAdapter(client);
 const Fixture: React.FC<{
   initialEntries: any[];
 }> = ({ initialEntries }) => {
-  return (
-    <ProvidersFixture>
-      <MemoryRouter initialEntries={initialEntries}>
+  const InnerFixture = () => {
+    const { userInitialised } = useAuth();
+
+    return userInitialised ? (
+      <Switch>
         <GuestRoute exact path="/login">
           user is not authenticated
         </GuestRoute>
@@ -26,6 +29,14 @@ const Fixture: React.FC<{
         <Route exact path="/referred-path">
           user is authenticated and on referred page
         </Route>
+      </Switch>
+    ) : null;
+  };
+
+  return (
+    <ProvidersFixture>
+      <MemoryRouter initialEntries={initialEntries}>
+        <InnerFixture />
       </MemoryRouter>
     </ProvidersFixture>
   );
