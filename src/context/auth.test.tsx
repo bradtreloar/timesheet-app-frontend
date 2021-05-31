@@ -12,46 +12,41 @@ import { makeUserData } from "services/adaptors";
 // Mock the HTTP client used by the datastore.
 const mockClient = new MockAdapter(client);
 
-const mockUser = randomUser();
-const mockAdminUser = randomUser(true);
-const mockPassword = randomPassword();
+const testUser = randomUser();
+const testAdminUser = randomUser(true);
+const testPassword = randomPassword();
+const testToken = randomstring.generate(50);
 
-const IsAuthenticatedFixture: React.FC<{
-  isAuthenticated: boolean;
-  isAdmin?: boolean;
-}> = ({ isAuthenticated, isAdmin }) => {
-  return (
-    <>
-      {isAuthenticated ? (
-        <div>User is logged in.</div>
-      ) : (
-        <div>User is not logged in.</div>
-      )}
-      {isAuthenticated && isAdmin && <div>User is admin.</div>}
-    </>
-  );
-};
-
-const PassiveFixture = () => {
-  const { isAuthenticated } = useAuth();
-  return <IsAuthenticatedFixture isAuthenticated={isAuthenticated} />;
-};
-
-const LoginFixture: React.FC<{ email: string; password: string }> = ({
-  email,
-  password,
-}) => {
-  const { isAuthenticated, login } = useAuth();
+const Fixture = () => {
+  const { isAuthenticated, isAdmin, login, logout, resetPassword } = useAuth();
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  return error ? (
-    <div data-testid="error">{error}</div>
+  if (error) {
+    return <div data-testid="error">{error}</div>;
+  }
+
+  return isAuthenticated ? (
+    <>
+      <div>User is logged in</div>
+      {isAdmin && <div>User is admin.</div>}
+      {message && <div>{message}</div>}
+      <button
+        onClick={async () => {
+          await logout();
+        }}
+      >
+        Log out
+      </button>
+    </>
   ) : (
     <>
+      <div>User is not logged in</div>
+      {message && <div>{message}</div>}
       <button
         onClick={async () => {
           try {
-            await login(email, password);
+            await login(testUser.email, testPassword);
           } catch (error) {
             setError(error.message);
           }
@@ -59,28 +54,14 @@ const LoginFixture: React.FC<{ email: string; password: string }> = ({
       >
         Log in
       </button>
-      <IsAuthenticatedFixture isAuthenticated={isAuthenticated} />
-    </>
-  );
-};
-
-const LogoutFixture = () => {
-  const { isAuthenticated, logout } = useAuth();
-
-  return (
-    <>
       <button
         onClick={async () => {
-          // Wrap call to login in act because it updates the
-          // AuthProvider's state.
-          await act(async () => {
-            logout();
-          });
+          await resetPassword(testUser.email, testToken, testPassword);
+          setMessage("password was reset");
         }}
       >
-        Log out
+        Save Password
       </button>
-      <IsAuthenticatedFixture isAuthenticated={isAuthenticated} />
     </>
   );
 };
@@ -102,7 +83,7 @@ describe("unauthenticated user", () => {
     await act(async () => {
       render(
         <AuthProvider>
-          <PassiveFixture />
+          <Fixture />
         </AuthProvider>
       );
     });
@@ -111,12 +92,12 @@ describe("unauthenticated user", () => {
   });
 
   test("user logs in successfully", async () => {
-    mockClient.onPost("/login").reply(200, makeUserData(mockUser));
+    mockClient.onPost("/login").reply(200, makeUserData(testUser));
 
     await act(async () => {
       render(
         <AuthProvider>
-          <LoginFixture email={mockUser.email} password={mockPassword} />;
+          <Fixture />
         </AuthProvider>
       );
     });
@@ -133,7 +114,7 @@ describe("unauthenticated user", () => {
     await act(async () => {
       render(
         <AuthProvider>
-          <LoginFixture email={mockUser.email} password={mockPassword} />;
+          <Fixture />
         </AuthProvider>
       );
     });
@@ -142,20 +123,6 @@ describe("unauthenticated user", () => {
       userEvent.click(screen.getByText(/Log in/));
     });
     screen.getByText(/unrecognized email or password/i);
-  });
-
-  test("has pre-existing session", async () => {
-    mockClient.onGet("/user").reply(200, makeUserData(mockUser));
-
-    await act(async () => {
-      render(
-        <AuthProvider>
-          <LogoutFixture />
-        </AuthProvider>
-      );
-    });
-
-    screen.getByText(/User is logged in/);
   });
 
   test("requests password reset", async () => {
@@ -170,7 +137,7 @@ describe("unauthenticated user", () => {
           {message && <div>{message}</div>}
           <button
             onClick={async () => {
-              await forgotPassword(mockUser.email);
+              await forgotPassword(testUser.email);
               setMessage("Request Submitted");
             }}
           >
@@ -183,7 +150,7 @@ describe("unauthenticated user", () => {
     await act(async () => {
       render(
         <AuthProvider>
-          <Fixture />;
+          <Fixture />
         </AuthProvider>
       );
     });
@@ -197,30 +164,10 @@ describe("unauthenticated user", () => {
   test("resets password using token", async () => {
     mockClient.onPost("/reset-password").reply(204);
 
-    const Fixture: React.FC = () => {
-      const { resetPassword } = useAuth();
-      const [message, setMessage] = useState("");
-      const testToken = randomstring.generate(50);
-
-      return (
-        <>
-          {message && <div>{message}</div>}
-          <button
-            onClick={async () => {
-              await resetPassword(mockUser.email, testToken, mockPassword);
-              setMessage("password was reset");
-            }}
-          >
-            Save Password
-          </button>
-        </>
-      );
-    };
-
     await act(async () => {
       render(
         <AuthProvider>
-          <Fixture />;
+          <Fixture />
         </AuthProvider>
       );
     });
@@ -234,14 +181,14 @@ describe("unauthenticated user", () => {
 
 describe("authenticated user", () => {
   beforeEach(() => {
-    mockClient.onGet("/user").reply(200, makeUserData(mockUser));
+    mockClient.onGet("/user").reply(200, makeUserData(testUser));
   });
 
   test("user is authenticated", async () => {
     await act(async () => {
       render(
         <AuthProvider>
-          <PassiveFixture />
+          <Fixture />
         </AuthProvider>
       );
     });
@@ -255,7 +202,7 @@ describe("authenticated user", () => {
     await act(async () => {
       render(
         <AuthProvider>
-          <LogoutFixture />
+          <Fixture />
         </AuthProvider>
       );
     });
@@ -267,12 +214,12 @@ describe("authenticated user", () => {
   });
 
   test("session has expired", async () => {
-    mockClient.onGet("/user").reply(204, makeUserData(mockUser));
+    mockClient.onGet("/user").reply(204, makeUserData(testUser));
 
     await act(async () => {
       render(
         <AuthProvider>
-          <LogoutFixture />
+          <Fixture />
         </AuthProvider>
       );
     });
@@ -283,21 +230,10 @@ describe("authenticated user", () => {
 
 describe("admin user", () => {
   beforeEach(() => {
-    mockClient.onGet("/user").reply(200, makeUserData(mockAdminUser));
+    mockClient.onGet("/user").reply(200, makeUserData(testAdminUser));
   });
 
   test("admin user is authenticated", async () => {
-    const Fixture = () => {
-      const { isAuthenticated, isAdmin } = useAuth();
-
-      return (
-        <IsAuthenticatedFixture
-          isAuthenticated={isAuthenticated}
-          isAdmin={isAdmin}
-        />
-      );
-    };
-
     await act(async () => {
       render(
         <AuthProvider>
