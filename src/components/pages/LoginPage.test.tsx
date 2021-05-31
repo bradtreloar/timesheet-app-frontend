@@ -28,8 +28,9 @@ test("renders login page", async () => {
   });
 
   expect(screen.getByRole("heading")).toHaveTextContent(/log in/i);
-  screen.getByLabelText(/email Address/i);
+  screen.getByLabelText(/email address/i);
   screen.getByLabelText(/password/i);
+  screen.getByLabelText(/remember/i);
 });
 
 test("handles LoginForm submission", async () => {
@@ -40,8 +41,9 @@ test("handles LoginForm submission", async () => {
   });
 
   expect(screen.getByRole("heading")).toHaveTextContent(/Log in/i);
-  userEvent.type(screen.getByLabelText(/Email Address/), testUser.email);
-  userEvent.type(screen.getByLabelText(/Password/), testPassword);
+  userEvent.type(screen.getByLabelText(/email address/i), testUser.email);
+  userEvent.type(screen.getByLabelText(/password/i), testPassword);
+  userEvent.click(screen.getByLabelText(/remember/i));
   await act(async () => {
     userEvent.click(screen.getByTestId("login-form-submit"));
   });
@@ -57,8 +59,9 @@ test("displays error when login fails", async () => {
   });
 
   expect(screen.getByRole("heading")).toHaveTextContent(/Log in/i);
-  userEvent.type(screen.getByLabelText(/Email Address/), testUser.email);
-  userEvent.type(screen.getByLabelText(/Password/), testPassword);
+  userEvent.type(screen.getByLabelText(/email address/i), testUser.email);
+  userEvent.type(screen.getByLabelText(/password/i), testPassword);
+  userEvent.click(screen.getByLabelText(/remember/i));
   await act(async () => {
     userEvent.click(screen.getByTestId("login-form-submit"));
   });

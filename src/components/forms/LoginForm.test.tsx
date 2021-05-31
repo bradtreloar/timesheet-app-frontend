@@ -12,9 +12,10 @@ test("Form submission succeeds", (done) => {
 
   render(
     <LoginForm
-      onSubmit={async ({ email, password }) => {
+      onSubmit={async ({ email, password, remember }) => {
         expect(email).toBe(mockEmail);
         expect(password).toBe(mockPassword);
+        expect(remember).toBe(true);
         done();
       }}
     />
@@ -22,6 +23,7 @@ test("Form submission succeeds", (done) => {
 
   userEvent.type(screen.getByLabelText(/email Address/i), mockEmail);
   userEvent.type(screen.getByLabelText(/password/i), mockPassword);
+  userEvent.click(screen.getByLabelText(/remember me/i));
   userEvent.click(screen.getByText(/log in/i));
 });
 

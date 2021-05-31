@@ -46,7 +46,7 @@ const Fixture = () => {
       <button
         onClick={async () => {
           try {
-            await login(testUser.email, testPassword);
+            await login(testUser.email, testPassword, true);
           } catch (error) {
             setError(error.message);
           }

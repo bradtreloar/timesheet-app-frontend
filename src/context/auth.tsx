@@ -9,7 +9,7 @@ interface AuthContextState {
   userInitialised: boolean;
   user: User | null;
   refreshUser: () => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, remember: boolean) => Promise<void>;
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   setPassword: (password: string) => Promise<void>;
@@ -56,9 +56,9 @@ const AuthProvider: React.FC = ({ children }) => {
    * @param email
    * @param password
    */
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, remember: boolean) => {
     try {
-      const user = await datastore.login(email, password);
+      const user = await datastore.login(email, password, remember);
       setUser(user);
     } catch (error) {
       if (error.response) {
@@ -146,7 +146,7 @@ const AuthProvider: React.FC = ({ children }) => {
           setUserInitialised(true);
         } catch (error) {
           if (error.isAxiosError && error.response === undefined) {
-            setError(`The app has run into a problem.`)
+            setError(`The app has run into a problem.`);
           }
         }
       })();

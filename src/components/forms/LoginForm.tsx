@@ -4,9 +4,10 @@ import * as EmailValidator from "email-validator";
 import useForm from "hooks/useForm";
 import { Alert, Button, Form } from "react-bootstrap";
 
-type LoginFormValues = {
+export type LoginFormValues = {
   email: string;
   password: string;
+  remember: boolean;
 };
 
 const validate = (values: any) => {
@@ -29,6 +30,7 @@ const validate = (values: any) => {
 const initialValues: LoginFormValues = {
   email: "",
   password: "",
+  remember: false,
 };
 
 interface LoginFormProps {
@@ -91,6 +93,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
             {errors.password}
           </Form.Control.Feedback>
         )}
+      </Form.Group>
+      <Form.Group controlId="remember">
+        <Form.Check
+          type="checkbox"
+          name="remember"
+          label="Remember me"
+          checked={values.remember}
+          onBlur={handleBlur}
+          onChange={handleChange}
+        />
       </Form.Group>
       <Button
         variant="primary"

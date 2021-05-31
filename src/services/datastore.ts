@@ -33,11 +33,12 @@ export const jsonAPIClient = axios.create({
   },
 });
 
-export const login = async (email: string, password: string): Promise<User> => {
+export const login = async (email: string, password: string, remember: boolean): Promise<User> => {
   await client.get("/csrf-cookie");
   const response: AxiosResponse<UserData> = await client.post("/login", {
     email,
     password,
+    remember,
   });
   return parseUser(response.data);
 };

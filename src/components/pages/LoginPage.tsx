@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import LoginForm from "components/forms/LoginForm";
+import LoginForm, { LoginFormValues } from "components/forms/LoginForm";
 import Messages from "components/Messages";
 import PageTitle from "components/PageTitle";
 import { useAuth } from "context/auth";
@@ -10,10 +10,13 @@ import useFormController from "hooks/useFormController";
 const LoginPage = () => {
   const { login } = useAuth();
 
-  const { formError, formPending, handleSubmit } = useFormController<{
-    email: string;
-    password: string;
-  }>(({ email, password }) => login(email, password));
+  const {
+    formError,
+    formPending,
+    handleSubmit,
+  } = useFormController<LoginFormValues>(({ email, password, remember }) =>
+    login(email, password, remember)
+  );
 
   return (
     <DefaultLayout>
@@ -21,10 +24,7 @@ const LoginPage = () => {
       <Messages />
       <div className="container">
         {formError && <div className="alert alert-danger">{formError}</div>}
-        <LoginForm
-          onSubmit={handleSubmit}
-          pending={formPending}
-        />
+        <LoginForm onSubmit={handleSubmit} pending={formPending} />
         <div className="my-3">
           <Link to="forgot-password">
             Forgot your password? Click here to reset it.
