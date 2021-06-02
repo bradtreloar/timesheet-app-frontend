@@ -535,16 +535,6 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
   );
 };
 
-interface ShiftInputProps {
-  index: number;
-  name: string;
-  label: string;
-  shiftValues: ShiftValues;
-  shiftHours: number | null;
-  isActive: boolean;
-  reason: Reason;
-}
-
 interface TimeFieldProps {
   name: string;
   label: string;
