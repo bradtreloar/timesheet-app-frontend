@@ -8,7 +8,7 @@ export type TimeInputValue = {
   minute: string;
 };
 
-interface TimeInputProps {
+export interface TimeInputProps {
   id?: string;
   name?: string;
   value: TimeInputValue;
