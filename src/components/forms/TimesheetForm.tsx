@@ -243,7 +243,7 @@ const validateTimesheet = (values: any) => {
   return errors;
 };
 
-interface TimesheetFormProps {
+export interface TimesheetFormProps {
   defaultShiftValues: ShiftValues[];
   onSubmitTimesheet: (values: {
     shifts: Shift[];
@@ -321,54 +321,6 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
     setSomeTouchedValues(newTouchedValues);
   };
 
-  const timeInput = (name: string, label: string) => {
-    const timeError = errors[`${name}`];
-    const hourValue = values[`${name}.hour`];
-    const minuteValue = values[`${name}.minute`];
-    const hourError = errors[`${name}.hour`];
-    const minuteError = errors[`${name}.minute`];
-    const visibleHourError = visibleErrors[`${name}.hour`];
-    const visibleMinuteError = visibleErrors[`${name}.minute`];
-    const visibleError = visibleHourError || visibleMinuteError;
-
-    return (
-      <div className="mr-md-3 mb-2 mb-md-0 flex-grow-1">
-        <div>
-          <div className="input-group" aria-label={label}>
-            <div className="input-group-prepend flex-grow-1">
-              <div className="input-group-text w-100">
-                <small className="text-uppercase">{label}</small>
-              </div>
-            </div>
-            <TimeInput
-              className={classnames(
-                "form-control w-auto flex-grow-0",
-                (visibleError || timeError) && "is-invalid"
-              )}
-              name={name}
-              value={{
-                hour: hourValue,
-                minute: minuteValue,
-              }}
-              onBlur={handleBlur}
-              onChange={handleChange}
-              disabled={pending}
-            />
-          </div>
-          {(timeError || visibleError) && (
-            <div className="sr-only">
-              <Form.Control.Feedback type="invalid">
-                {timeError && <div>{timeError}</div>}
-                {visibleHourError && <div>{hourError}</div>}
-                {visibleMinuteError && <div>{minuteError}</div>}
-              </Form.Control.Feedback>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   const allShiftValues = range(7).map((index) =>
     getShiftValuesFromFormValues(values, index)
   );
@@ -389,6 +341,29 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
       shiftHours && index < 5 ? totalHours + shiftHours : totalHours,
     0
   );
+
+  const timeField = (name: string, label: string) => {
+    const visibleHourError = visibleErrors[`${name}.hour`];
+    const visibleMinuteError = visibleErrors[`${name}.minute`];
+
+    return (
+      <TimeField
+        name={name}
+        label={label}
+        hour={values[`${name}.hour`]}
+        minute={values[`${name}.minute`]}
+        timeError={errors[`${name}`]}
+        hourError={errors[`${name}.hour`]}
+        minuteError={errors[`${name}.minute`]}
+        visibleHourError={visibleHourError}
+        visibleMinuteError={visibleMinuteError}
+        visibleError={visibleHourError || visibleMinuteError}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        disabled={pending}
+      />
+    );
+  };
 
   const shiftInput = (index: number) => {
     const name = `shift.${index}`;
@@ -429,9 +404,9 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
           </label>
           {isActive ? (
             <div className="d-md-flex align-items-center mt-1 mt-lg-0">
-              {timeInput(`${name}.startTime`, "Start")}
-              {timeInput(`${name}.endTime`, "End")}
-              {timeInput(`${name}.breakDuration`, "Break")}
+              {timeField(`${name}.startTime`, "Start")}
+              {timeField(`${name}.endTime`, "End")}
+              {timeField(`${name}.breakDuration`, "Break")}
               <div className="shift-hours">
                 <div className="form-control w-100 text-right">
                   {shiftHours ? `${shiftHours} hours` : `\u00A0`}
@@ -557,6 +532,85 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
         )}
       </div>
     </form>
+  );
+};
+
+interface ShiftInputProps {
+  index: number;
+  name: string;
+  label: string;
+  shiftValues: ShiftValues;
+  shiftHours: number | null;
+  isActive: boolean;
+  reason: Reason;
+}
+
+interface TimeFieldProps {
+  name: string;
+  label: string;
+  hour: string;
+  minute: string;
+  timeError: string;
+  hourError: string;
+  minuteError: string;
+  visibleHourError?: boolean;
+  visibleMinuteError?: boolean;
+  visibleError?: boolean;
+  onBlur: (event: any) => void;
+  onChange: (event: any) => void;
+  disabled?: boolean;
+}
+
+const TimeField: React.FC<TimeFieldProps> = ({
+  name,
+  label,
+  hour,
+  minute,
+  timeError,
+  hourError,
+  minuteError,
+  visibleHourError,
+  visibleMinuteError,
+  visibleError,
+  onBlur,
+  onChange,
+  disabled,
+}) => {
+  return (
+    <div className="mr-md-3 mb-2 mb-md-0 flex-grow-1">
+      <div>
+        <div className="input-group" aria-label={label}>
+          <div className="input-group-prepend flex-grow-1">
+            <div className="input-group-text w-100">
+              <small className="text-uppercase">{label}</small>
+            </div>
+          </div>
+          <TimeInput
+            className={classnames(
+              "form-control w-auto flex-grow-0",
+              (visibleError || timeError) && "is-invalid"
+            )}
+            name={name}
+            value={{
+              hour,
+              minute,
+            }}
+            onBlur={onBlur}
+            onChange={onChange}
+            disabled={disabled}
+          />
+        </div>
+        {(timeError || visibleError) && (
+          <div className="sr-only">
+            <Form.Control.Feedback type="invalid">
+              {timeError && <div>{timeError}</div>}
+              {visibleHourError && <div>{hourError}</div>}
+              {visibleMinuteError && <div>{minuteError}</div>}
+            </Form.Control.Feedback>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

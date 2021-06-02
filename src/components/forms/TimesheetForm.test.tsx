@@ -1,11 +1,9 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import TimesheetForm from "./TimesheetForm";
 import { randomReason, randomShiftValuesArray } from "fixtures/random";
 import randomstring from "randomstring";
-import { enterShiftValues, eraseShiftValues } from "fixtures/userInput";
-import { expectTimesEqual, expectValidShift } from "fixtures/expect";
 import { noop, range } from "lodash";
 import { DateTime } from "luxon";
 
@@ -20,7 +18,93 @@ export const EMPTY_SHIFT_TIMES = {
 const paddedValue = (value: string) =>
   value === "" ? value : value.padStart(2, "0");
 
-const testWeekStartDateTime = DateTime.local();
+const timeInputs = (shiftValues: ShiftValues) => [
+  {
+    label: /start/i,
+    value: shiftValues.startTime,
+  },
+  {
+    label: /end/i,
+    value: shiftValues.endTime,
+  },
+  {
+    label: /break/i,
+    value: shiftValues.breakDuration,
+  },
+];
+
+const getShiftInput = (index: number) =>
+  screen.getAllByLabelText(/^shift$/i)[index];
+
+const getTimeInput = (shiftIndex: number, label: RegExp) => {
+  const shiftInput = screen.getAllByLabelText(/^shift$/i)[shiftIndex];
+  return within(shiftInput).getByLabelText(label);
+};
+
+const getHourInput = (shiftIndex: number, label: RegExp) => {
+  const timeInput = getTimeInput(shiftIndex, label);
+  return within(timeInput).getByLabelText(/hour/i);
+};
+
+const getMinuteInput = (shiftIndex: number, label: RegExp) => {
+  const timeInput = getTimeInput(shiftIndex, label);
+  return within(timeInput).getByLabelText(/minute/i);
+};
+
+const clickShiftToggle = (index: number) => {
+  const shiftInput = screen.getAllByLabelText(/^shift$/i)[index];
+  const checkbox = within(shiftInput).getByTestId(`shift-${index}-toggle`);
+  userEvent.click(checkbox);
+};
+
+export const enterShiftValues = (index: number, shiftValues: ShiftValues) => {
+  for (let { label, value } of timeInputs(shiftValues)) {
+    if (value !== null) {
+      if (value.hour !== null) {
+        userEvent.clear(getHourInput(index, label));
+        expect(getHourInput(index, label).getAttribute("value")).toEqual("");
+        userEvent.type(getHourInput(index, label), value.hour.toString());
+        expect(getHourInput(index, label).getAttribute("value")).toEqual(value.hour.toString());
+      }
+      if (value.minute !== null) {
+        userEvent.clear(getMinuteInput(index, label));
+        expect(getMinuteInput(index, label).getAttribute("value")).toEqual("");
+        userEvent.type(getMinuteInput(index, label), value.minute.toString());
+        expect(getMinuteInput(index, label).getAttribute("value")).toEqual(value.minute.toString());
+      }
+    }
+  }
+};
+
+export const eraseShiftInputValues = (index: number) => {
+  const shiftInput = getShiftInput(index);
+  const inputLabels = [/start/i, /end/i, /break/i];
+
+  for (let label of inputLabels) {
+    const hourInput = getHourInput(index, label);
+    userEvent.clear(hourInput);
+    userEvent.clear(getMinuteInput(index, label));
+  }
+};
+
+export const expectShiftInputValues = (
+  index: number,
+  shiftValues: ShiftValues
+) => {
+  for (let { label, value } of timeInputs(shiftValues)) {
+    const { hour, minute } = value;
+    expect(getHourInput(index, label).getAttribute("value")).toEqual(hour);
+    expect(getMinuteInput(index, label).getAttribute("value")).toEqual(
+      paddedValue(minute)
+    );
+  }
+};
+
+export const expectValidShift = (shift: Shift) => {
+  expect(typeof shift.start).toBe("string");
+  expect(typeof shift.end).toBe("string");
+  expect(typeof shift.breakDuration).toBe("number");
+};
 
 test("renders", () => {
   const testShifts = randomShiftValuesArray();
@@ -45,7 +129,7 @@ test("renders", () => {
   });
 });
 
-test("toggles shift time input when shift checkbox is clicked", () => {
+test("toggles shift time input when shift checkbox is clicked", async () => {
   const testShifts = randomShiftValuesArray();
   render(
     <TimesheetForm
@@ -55,16 +139,17 @@ test("toggles shift time input when shift checkbox is clicked", () => {
     />
   );
 
-  const shiftInput = screen.getAllByLabelText(/^shift$/i)[0];
+  let shiftInput = screen.getAllByLabelText(/^shift$/i)[0];
   within(shiftInput).getByLabelText(/start/i);
-  const checkbox = within(shiftInput).getByTestId("shift-0-toggle");
   // Toggle shift off.
-  userEvent.click(checkbox);
+  clickShiftToggle(0);
+  shiftInput = screen.getAllByLabelText(/^shift$/i)[0];
   expect(within(shiftInput).queryByLabelText(/start/i)).toBeNull();
   within(shiftInput).getByLabelText(/reason/i);
   within(shiftInput).getByText(/select a reason/i);
   // Toggle shift on.
-  userEvent.click(checkbox);
+  clickShiftToggle(0);
+  shiftInput = screen.getAllByLabelText(/^shift$/i)[0];
   within(shiftInput).getByLabelText(/start/i);
   expect(
     within(within(shiftInput).getByLabelText(/start/i))
@@ -73,7 +158,7 @@ test("toggles shift time input when shift checkbox is clicked", () => {
   ).toEqual("");
 });
 
-test("handles erasing and re-entering shift times", () => {
+test("handles erasing shift times", () => {
   const testShifts = randomShiftValuesArray();
   render(
     <TimesheetForm
@@ -84,13 +169,27 @@ test("handles erasing and re-entering shift times", () => {
   );
 
   const shiftInputs = screen.getAllByLabelText(/^shift$/i);
-  for (let index in shiftInputs) {
-    const shiftInput = shiftInputs[index];
+  for (let index = 0; index < shiftInputs.length; index++) {
+    eraseShiftInputValues(index);
+    expectShiftInputValues(index, EMPTY_SHIFT_TIMES);
+  }
+});
+
+test("handles entering shift times", async () => {
+  const testShifts = randomShiftValuesArray();
+  render(
+    <TimesheetForm
+      defaultShiftValues={testShifts}
+      onSubmitTimesheet={noop}
+      onSubmitDefaultShiftValues={noop}
+    />
+  );
+
+  const shiftInputs = screen.getAllByLabelText(/^shift$/i);
+  for (let index = 0; index < shiftInputs.length; index++) {
     const testShiftValues = testShifts[index];
-    eraseShiftValues(shiftInput);
-    expectTimesEqual(shiftInput, EMPTY_SHIFT_TIMES);
-    enterShiftValues(shiftInput, testShiftValues);
-    expectTimesEqual(shiftInput, testShiftValues);
+    enterShiftValues(index, testShiftValues);
+    expectShiftInputValues(index, testShiftValues);
   }
 });
 
@@ -232,10 +331,7 @@ test('hides "save default shifts" button when shift times are not valid', () => 
     />
   );
 
-  const shiftInput = screen.getAllByLabelText(/^shift$/i)[0];
-  const startTimeInput = within(shiftInput).getByLabelText(/start/i);
-  userEvent.clear(within(startTimeInput).getByLabelText(/hour/i));
-  userEvent.clear(within(startTimeInput).getByLabelText(/minute/i));
-
+  userEvent.clear(getHourInput(0, /start/i));
+  userEvent.clear(getMinuteInput(0, /start/i));
   expect(screen.queryByText(/^save these shifts as my default$/i)).toBeNull();
 });
