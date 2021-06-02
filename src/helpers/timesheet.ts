@@ -3,7 +3,6 @@ import { DateTime } from "luxon";
 
 export const getWeekStartDate = (timesheet: Timesheet) => {
   const { shifts, absences } = timesheet;
-  let weekStartDate = null;
   if (shifts && shifts.length > 0) {
     const shiftDate = DateTime.fromISO(shifts[0].start);
     return shiftDate.set({ weekday: 1, hour: 0, minute: 0 });
