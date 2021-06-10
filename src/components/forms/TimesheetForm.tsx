@@ -279,10 +279,13 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
     setSomeValues,
     setSomeTouchedValues,
     errors,
+    focusedInput,
     handleChange,
+    handleFocus,
     handleBlur,
     handleSubmit: handleSubmitTimesheet,
     handleReset,
+    setFocusedInput,
     visibleErrors,
   } = useForm(
     initialValues,
@@ -397,6 +400,8 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
   const timeField = (name: string, label: string) => {
     const visibleHourError = visibleErrors[`${name}.hour`];
     const visibleMinuteError = visibleErrors[`${name}.minute`];
+    const hasFocus =
+      focusedInput === `${name}.hour` || focusedInput === `${name}.minute`;
 
     return (
       <TimeField
@@ -410,8 +415,10 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
         visibleHourError={visibleHourError}
         visibleMinuteError={visibleMinuteError}
         visibleError={visibleHourError || visibleMinuteError}
+        hasFocus={hasFocus}
         onChange={handleChange}
         onBlur={handleBlur}
+        onFocus={handleFocus}
         disabled={pending}
         refs={inputRefs[name]}
       />
@@ -599,6 +606,8 @@ interface TimeFieldProps {
   visibleHourError?: boolean;
   visibleMinuteError?: boolean;
   visibleError?: boolean;
+  hasFocus: boolean;
+  onFocus: (event: any) => void;
   onBlur: (event: any) => void;
   onChange: (event: any) => void;
   disabled?: boolean;
@@ -619,11 +628,17 @@ const TimeField: React.FC<TimeFieldProps> = ({
   visibleHourError,
   visibleMinuteError,
   visibleError,
+  hasFocus,
+  onFocus,
   onBlur,
   onChange,
   disabled,
   refs,
 }) => {
+  if (hasFocus) {
+    console.log("hasFocus:", name);
+  }
+
   return (
     <div className="mr-md-3 mb-2 mb-md-0 flex-grow-1">
       <div>
@@ -636,6 +651,7 @@ const TimeField: React.FC<TimeFieldProps> = ({
           <TimeInput
             className={classnames(
               "form-control w-auto flex-grow-0",
+              hasFocus && "border-primary",
               (visibleError || timeError) && "is-invalid"
             )}
             name={name}
@@ -644,6 +660,7 @@ const TimeField: React.FC<TimeFieldProps> = ({
               minute,
             }}
             onBlur={onBlur}
+            onFocus={onFocus}
             onChange={onChange}
             disabled={disabled}
             refs={refs}

@@ -14,6 +14,7 @@ export interface TimeInputProps {
   value: TimeInputValue;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
+  onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   className?: string;
   refs: {
@@ -27,6 +28,7 @@ export const TimeInput: React.FC<TimeInputProps> = ({
   name,
   value,
   onBlur,
+  onFocus,
   onChange,
   disabled,
   className,
@@ -69,6 +71,9 @@ export const TimeInput: React.FC<TimeInputProps> = ({
 
   const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
     setFocus(event.target.name, true);
+    if (onFocus !== undefined) {
+      onFocus(event);
+    }
   };
 
   const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {

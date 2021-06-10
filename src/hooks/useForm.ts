@@ -1,5 +1,5 @@
 import { forOwn, isEmpty } from "lodash";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 export type FormValue = any;
 
@@ -26,6 +26,11 @@ const useForm = <T>(
   const [touchedValues, setTouchedValues] = useState<FormTouchedValues<T>>({});
   const [errors, setErrors] = useState<FormErrors<T>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
+  // React.useEffect(() => {
+  //   console.log("focusedInput:", focusedInput);
+  // }, [focusedInput]);
 
   const visibleErrors = useMemo(() => {
     const visibleErrors = {} as FormVisibleErrors<T>;
@@ -79,10 +84,19 @@ const useForm = <T>(
     setValue(name, value);
   };
 
+  const handleFocus = (event: any) => {
+    const target = event.target;
+    const name = target.name;
+    setFocusedInput(target.name);
+  }
+
   const handleBlur = (event: any) => {
     const target = event.target;
     const name = target.name;
     setTouchedValue(name, true);
+    if (focusedInput === target.name) {
+      setFocusedInput(null);
+    }
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -109,14 +123,17 @@ const useForm = <T>(
     values,
     touchedValues,
     errors,
+    focusedInput,
     visibleErrors,
     submitAttempted,
     setValue,
+    setFocusedInput,
     setSomeValues,
     setTouchedValue,
     setSomeTouchedValues,
     handleBlur,
     handleChange,
+    handleFocus,
     handleSubmit,
     handleReset,
   };
