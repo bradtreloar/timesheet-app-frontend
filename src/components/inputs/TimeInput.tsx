@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { RefObject, useEffect, useRef, useState } from "react";
 import classnames from "classnames";
 import "./TimeInput.scss";
 import { isInteger } from "lodash";
@@ -16,6 +16,10 @@ export interface TimeInputProps {
   onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   className?: string;
+  refs: {
+    hour: RefObject<HTMLInputElement>;
+    minute: RefObject<HTMLInputElement>;
+  };
 }
 
 export const TimeInput: React.FC<TimeInputProps> = ({
@@ -26,11 +30,9 @@ export const TimeInput: React.FC<TimeInputProps> = ({
   onChange,
   disabled,
   className,
+  refs,
 }) => {
   const { hour, minute } = value;
-  const hourRef = useRef<HTMLInputElement>(null);
-  const minuteRef = useRef<HTMLInputElement>(null);
-
   const [minuteHasFocus, setMinuteHasFocus] = useState(false);
 
   const underMaxLength = (value: string) => value.length <= 2;
@@ -89,8 +91,8 @@ export const TimeInput: React.FC<TimeInputProps> = ({
   useEffect(() => {
     // Since we change the value of the minute field on focus, we need to
     // re-select the field contents.
-    if (minuteHasFocus && minuteRef.current !== null) {
-      minuteRef.current.select();
+    if (minuteHasFocus && refs.minute.current !== null) {
+      refs.minute.current.select();
     }
   }, [minuteHasFocus]);
 
@@ -108,7 +110,7 @@ export const TimeInput: React.FC<TimeInputProps> = ({
           onChange={handleChange}
           onKeyPress={handleKeyPress}
           disabled={disabled}
-          ref={hourRef}
+          ref={refs.hour}
         />
         <span className="mx-1">:</span>
         <input
@@ -122,7 +124,7 @@ export const TimeInput: React.FC<TimeInputProps> = ({
           onChange={handleChange}
           onKeyPress={handleKeyPress}
           disabled={disabled}
-          ref={minuteRef}
+          ref={refs.minute}
         />
       </div>
     </div>

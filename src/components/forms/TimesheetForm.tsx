@@ -1,4 +1,11 @@
-import React, { useCallback, useMemo } from "react";
+import React, {
+  createRef,
+  RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { isEmpty, range } from "lodash";
 import classnames from "classnames";
 import {
@@ -285,6 +292,47 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
     validateTimesheet
   );
 
+  const inputRefs = useMemo(
+    () =>
+      range(7).reduce(
+        (refs, index) => {
+          refs[`shift.${index}.startTime`] = {
+            hour: createRef<HTMLInputElement>(),
+            minute: createRef<HTMLInputElement>(),
+          };
+          refs[`shift.${index}.endTime`] = {
+            hour: createRef<HTMLInputElement>(),
+            minute: createRef<HTMLInputElement>(),
+          };
+          refs[`shift.${index}.breakDuration`] = {
+            hour: createRef<HTMLInputElement>(),
+            minute: createRef<HTMLInputElement>(),
+          };
+          return refs;
+        },
+        {} as {
+          [key: string]: {
+            hour: RefObject<HTMLInputElement>;
+            minute: RefObject<HTMLInputElement>;
+          };
+        }
+      ),
+    []
+  );
+
+  const [
+    selectedInput,
+    setSelectedInput,
+  ] = useState<RefObject<HTMLInputElement> | null>(
+    inputRefs[`shift.0.startTime`].hour
+  );
+
+  useEffect(() => {
+    if (selectedInput) {
+      selectedInput.current?.select();
+    }
+  }, [selectedInput]);
+
   const defaultShiftValuesErrors = useMemo(() => validateShiftValues(values), [
     values,
   ]);
@@ -307,7 +355,10 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
     const newValues = {} as { [key: string]: string | boolean };
     const newTouchedValues = {} as { [key: string]: false };
     newValues[`${name}.isActive`] = isActive;
-    if (!isActive) {
+    if (isActive) {
+      // Focus on the start time hour input.
+      setSelectedInput(inputRefs[`${name}.startTime`].hour);
+    } else {
       // Clear the reason.
       newValues[`${name}.reason`] = "none";
       // Clear the time values for the shift and flag the time inputs
@@ -316,6 +367,7 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
         newValues[`${name}.${inputName}`] = "";
         newTouchedValues[`${name}.${inputName}`] = false;
       });
+      setSelectedInput(null);
     }
     setSomeValues(newValues);
     setSomeTouchedValues(newTouchedValues);
@@ -361,6 +413,7 @@ const TimesheetForm: React.FC<TimesheetFormProps> = ({
         onChange={handleChange}
         onBlur={handleBlur}
         disabled={pending}
+        refs={inputRefs[name]}
       />
     );
   };
@@ -549,6 +602,10 @@ interface TimeFieldProps {
   onBlur: (event: any) => void;
   onChange: (event: any) => void;
   disabled?: boolean;
+  refs: {
+    hour: RefObject<HTMLInputElement>;
+    minute: RefObject<HTMLInputElement>;
+  };
 }
 
 const TimeField: React.FC<TimeFieldProps> = ({
@@ -565,6 +622,7 @@ const TimeField: React.FC<TimeFieldProps> = ({
   onBlur,
   onChange,
   disabled,
+  refs,
 }) => {
   return (
     <div className="mr-md-3 mb-2 mb-md-0 flex-grow-1">
@@ -588,6 +646,7 @@ const TimeField: React.FC<TimeFieldProps> = ({
             onBlur={onBlur}
             onChange={onChange}
             disabled={disabled}
+            refs={refs}
           />
         </div>
         {(timeError || visibleError) && (
