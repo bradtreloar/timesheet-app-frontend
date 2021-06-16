@@ -1,23 +1,28 @@
 import randomstring from "randomstring";
 import { Time } from "services/date";
 import faker from "faker";
-import { random as randomNumber, range } from "lodash";
+import { defaults, random as randomNumber, range } from "lodash";
 import { DateTime } from "luxon";
 import { reasons } from "components/forms/TimesheetForm";
 
 const randomID = () => randomstring.generate();
 
-export const randomUser = (userIsAdmin?: boolean): User => {
-  return {
+const randomTimestamps = () => ({
+  changed: DateTime.local().toISO(),
+  created: DateTime.local().toISO(),
+});
+
+export const randomUser = (partialUser?: Partial<User>): User =>
+  defaults(partialUser, {
     id: randomID(),
+    ...randomTimestamps(),
     name: faker.name.findName(),
     email: faker.internet.email(),
     phoneNumber: faker.phone.phoneNumber("04## ### ###"),
     acceptsReminders: true,
-    isAdmin: userIsAdmin === true,
+    isAdmin: false,
     defaultShiftValues: range(7).map((index) => randomShiftValues()),
-  };
-};
+  });
 
 export const randomUsers = (count: number) =>
   range(count).map(() => randomUser());
@@ -97,29 +102,34 @@ export const randomShiftDates = (datetime: DateTime) => {
 export const randomShift = (dateTime: DateTime): Shift => {
   const [start, end] = randomShiftDates(dateTime);
   return {
+    id: randomID(),
+    ...randomTimestamps(),
     start: start.toISO(),
     end: end.toISO(),
     breakDuration: randomMinutes(30, 60),
   };
 };
 
-export const randomTimesheet = (user: User): Timesheet => {
+export const randomTimesheet = (
+  user: User,
+  partialTimesheet?: Partial<Timesheet>
+): Timesheet => {
   const weekStartDateTime =
     DateTime.now().weekday === 1
       ? DateTime.now().startOf("week").minus({ weeks: 1 })
       : DateTime.now().startOf("week");
 
-  return {
+  return defaults(partialTimesheet, {
     id: randomID(),
-    userID: user.id as string,
+    ...randomTimestamps(),
+    userID: user.id,
     shifts: range(7).map(
       (dateOffset): Shift =>
         randomShift(weekStartDateTime.plus({ days: dateOffset }))
     ),
-    created: DateTime.local().toISO(),
-    changed: DateTime.local().toISO(),
+    absences: [],
     comment: randomstring.generate(60),
-  };
+  });
 };
 
 export const randomTimesheets = (user: User, count: number) =>
@@ -132,10 +142,9 @@ export const randomSettings = (
 ): Setting[] => [
   {
     id: randomID(),
+    ...randomTimestamps(),
     name: "timesheetRecipients",
     value: settings?.timesheetRecipients || faker.internet.email(),
-    created: DateTime.local().toISO(),
-    changed: DateTime.local().toISO(),
   },
 ];
 

@@ -117,16 +117,20 @@ const processShiftValues = (values: any): ShiftValues[] =>
  */
 const processTimesheet = (
   values: any
-): { shifts: Shift[]; absences: Absence[]; comment: string } => {
+): {
+  shifts: ShiftAttributes[];
+  absences: AbsenceAttributes[];
+  comment: string;
+} => {
   const weekStartDateTime = values.weekStartDateTime as DateTime;
   const comment = values.comment;
   const allShiftValues = processShiftValues(values);
-  const shifts: Shift[] = [];
-  const absences: Absence[] = [];
+  const shifts: ShiftAttributes[] = [];
+  const absences: AbsenceAttributes[] = [];
   allShiftValues.forEach((shiftValues, index) => {
     const shiftDate = weekStartDateTime.plus({ days: index });
     if (shiftValues.isActive) {
-      const shift: Shift = {
+      const shift: ShiftAttributes = {
         start: shiftDate
           .set({
             hour: parseInt(shiftValues.startTime.hour),
@@ -146,7 +150,7 @@ const processTimesheet = (
       };
       shifts.push(shift);
     } else {
-      const absence: Absence = {
+      const absence: AbsenceAttributes = {
         date: shiftDate.toISO(),
         reason: shiftValues.reason,
       };
@@ -253,8 +257,8 @@ const validateTimesheet = (values: any) => {
 export interface TimesheetFormProps {
   defaultShiftValues: ShiftValues[];
   onSubmitTimesheet: (values: {
-    shifts: Shift[];
-    absences: Absence[];
+    shifts: ShiftAttributes[];
+    absences: AbsenceAttributes[];
     comment: string;
   }) => void;
   onSubmitDefaultShiftValues: (shifts: ShiftValues[]) => void;
@@ -635,10 +639,6 @@ const TimeField: React.FC<TimeFieldProps> = ({
   disabled,
   refs,
 }) => {
-  if (hasFocus) {
-    console.log("hasFocus:", name);
-  }
-
   return (
     <div className="mr-md-3 mb-2 mb-md-0 flex-grow-1">
       <div>

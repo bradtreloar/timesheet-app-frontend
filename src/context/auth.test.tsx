@@ -7,13 +7,14 @@ import { client } from "services/datastore";
 import { randomPassword, randomUser } from "fixtures/random";
 import randomstring from "randomstring";
 import MockAdapter from "axios-mock-adapter";
-import { makeUserData } from "services/adaptors";
 
 // Mock the HTTP client used by the datastore.
 const mockClient = new MockAdapter(client);
 
 const testUser = randomUser();
-const testAdminUser = randomUser(true);
+const testAdminUser = randomUser({
+  isAdmin: true,
+});
 const testPassword = randomPassword();
 const testToken = randomstring.generate(50);
 
@@ -92,7 +93,7 @@ describe("unauthenticated user", () => {
   });
 
   test("user logs in successfully", async () => {
-    mockClient.onPost("/login").reply(200, makeUserData(testUser));
+    mockClient.onPost("/login").reply(200, testUser);
 
     await act(async () => {
       render(
@@ -181,7 +182,7 @@ describe("unauthenticated user", () => {
 
 describe("authenticated user", () => {
   beforeEach(() => {
-    mockClient.onGet("/user").reply(200, makeUserData(testUser));
+    mockClient.onGet("/user").reply(200, testUser);
   });
 
   test("user is authenticated", async () => {
@@ -214,7 +215,7 @@ describe("authenticated user", () => {
   });
 
   test("session has expired", async () => {
-    mockClient.onGet("/user").reply(204, makeUserData(testUser));
+    mockClient.onGet("/user").reply(204, testUser);
 
     await act(async () => {
       render(
@@ -230,7 +231,7 @@ describe("authenticated user", () => {
 
 describe("admin user", () => {
   beforeEach(() => {
-    mockClient.onGet("/user").reply(200, makeUserData(testAdminUser));
+    mockClient.onGet("/user").reply(200, testAdminUser);
   });
 
   test("admin user is authenticated", async () => {

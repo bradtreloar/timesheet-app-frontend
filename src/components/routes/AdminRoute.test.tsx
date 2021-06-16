@@ -4,7 +4,6 @@ import { act, render, screen } from "@testing-library/react";
 import { randomUser } from "fixtures/random";
 import { client } from "services/datastore";
 import MockAdapter from "axios-mock-adapter";
-import { makeUserData } from "services/adaptors";
 import AdminRoute from "./AdminRoute";
 import { ProvidersFixture } from "fixtures/context";
 
@@ -37,8 +36,10 @@ test("redirects to /login when not authenticated", async () => {
 });
 
 test("renders admin route when authenticated as admin", async () => {
-  const testUser = randomUser(true);
-  mockClient.onGet("/user").reply(200, makeUserData(testUser));
+  const testUser = randomUser({
+    isAdmin: true,
+  });
+  mockClient.onGet("/user").reply(200, testUser);
   await act(async () => {
     render(<Fixture />);
   });
@@ -47,7 +48,7 @@ test("renders admin route when authenticated as admin", async () => {
 
 test("renders access denied route when authenticated but not admin", async () => {
   const testUser = randomUser();
-  mockClient.onGet("/user").reply(200, makeUserData(testUser));
+  mockClient.onGet("/user").reply(200, testUser);
   await act(async () => {
     render(<Fixture />);
   });

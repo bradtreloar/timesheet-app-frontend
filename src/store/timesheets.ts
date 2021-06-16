@@ -15,20 +15,27 @@ const fetchTimesheets = createAsyncThunk(
   }
 );
 
+interface AddTimesheetArgs {
+  user: User;
+  timesheet: TimesheetAttributes;
+  shifts: ShiftAttributes[];
+  absences: AbsenceAttributes[];
+}
+
 const addTimesheet = createAsyncThunk(
   "timesheets/add",
-  async (timesheet: Timesheet) => {
-    const createdTimesheet = await datastore.createTimesheet(timesheet);
-    if (timesheet.shifts !== undefined) {
-      createdTimesheet.shifts = await datastore.createShifts(
-        timesheet.shifts,
-        createdTimesheet
+  async ({ user, timesheet, shifts, absences }: AddTimesheetArgs) => {
+    const createdTimesheet = await datastore.createTimesheet(timesheet, user);
+    if (shifts.length > 0) {
+      createdTimesheet.shifts = await Promise.all(
+        shifts.map((shift) => datastore.createShift(shift, createdTimesheet))
       );
     }
-    if (timesheet.absences !== undefined) {
-      createdTimesheet.absences = await datastore.createAbsences(
-        timesheet.absences,
-        createdTimesheet
+    if (absences.length > 0) {
+      createdTimesheet.absences = await Promise.all(
+        absences.map((absence) =>
+          datastore.createAbsence(absence, createdTimesheet)
+        )
       );
     }
     return await datastore.completeTimesheet(createdTimesheet);

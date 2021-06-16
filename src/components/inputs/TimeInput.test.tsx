@@ -8,6 +8,11 @@ import { noop } from "lodash";
 const paddedValue = (value: string) =>
   value === "" ? value : value.padStart(2, "0");
 
+const createInputRefs = () => ({
+  hour: React.createRef<HTMLInputElement>(),
+  minute: React.createRef<HTMLInputElement>(),
+});
+
 test("renders null value", () => {
   render(
     <TimeInput
@@ -15,6 +20,7 @@ test("renders null value", () => {
         hour: "",
         minute: "",
       }}
+      refs={createInputRefs()}
       onChange={noop}
     />
   );
@@ -32,6 +38,7 @@ test("renders hour only", () => {
         hour,
         minute: "",
       }}
+      refs={createInputRefs()}
       onChange={noop}
     />
   );
@@ -49,6 +56,7 @@ test("renders minute only", () => {
         hour: "",
         minute,
       }}
+      refs={createInputRefs()}
       onChange={noop}
     />
   );
@@ -69,6 +77,7 @@ test("renders hour and minute", () => {
         hour,
         minute,
       }}
+      refs={createInputRefs()}
       onChange={noop}
     />
   );
@@ -93,6 +102,7 @@ test("handles hour input", () => {
         hour: "",
         minute: "",
       }}
+      refs={createInputRefs()}
       onChange={onChange}
     />
   );
@@ -114,6 +124,7 @@ test("handles minute input", () => {
         hour: "",
         minute: "",
       }}
+      refs={createInputRefs()}
       onChange={onChange}
     />
   );
@@ -133,6 +144,7 @@ test("handles hour input with existing value", () => {
         hour: "1",
         minute: "",
       }}
+      refs={createInputRefs()}
       onChange={onChange}
     />
   );
@@ -150,6 +162,7 @@ test("ignores alphabetical input", () => {
         hour,
         minute: "",
       }}
+      refs={createInputRefs()}
       onChange={onChange}
     />
   );
@@ -165,7 +178,13 @@ test("ignores numeric input longer then 2 digits", () => {
   const minute = randomInt(10, 59).toString();
   const onChange = jest.fn();
 
-  render(<TimeInput value={{ hour, minute }} onChange={onChange} />);
+  render(
+    <TimeInput
+      value={{ hour, minute }}
+      onChange={onChange}
+      refs={createInputRefs()}
+    />
+  );
 
   const hourInput = screen.getByLabelText(/hour/i);
   const minuteInput = screen.getByLabelText(/minute/i);
@@ -181,7 +200,13 @@ test("ignores numeric input above max value", () => {
   const minute = randomInt(6, 9).toString();
   const onChange = jest.fn();
 
-  render(<TimeInput value={{ hour, minute }} onChange={onChange} />);
+  render(
+    <TimeInput
+      value={{ hour, minute }}
+      onChange={onChange}
+      refs={createInputRefs()}
+    />
+  );
 
   const hourInput = screen.getByLabelText(/hour/i);
   const minuteInput = screen.getByLabelText(/minute/i);
@@ -205,6 +230,7 @@ test("handles erase existing hour value", () => {
         minute: "",
       }}
       onChange={onChange}
+      refs={createInputRefs()}
     />
   );
   userEvent.clear(screen.getByLabelText(/hour/i));
@@ -223,6 +249,7 @@ test("handles erase existing minute value", () => {
         minute,
       }}
       onChange={onChange}
+      refs={createInputRefs()}
     />
   );
   userEvent.clear(screen.getByLabelText(/hour/i));

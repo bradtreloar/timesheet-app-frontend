@@ -43,7 +43,7 @@ const UserFormPage: React.FC = () => {
   const { formError, formPending, handleSubmit } = useFormController(
     async (values: UserFormValues) => {
       if (newUser) {
-        const newUser: User = {
+        const newUser: UserAttributes = {
           ...values,
           defaultShiftValues: createEmptyDefaultShifts(),
         };

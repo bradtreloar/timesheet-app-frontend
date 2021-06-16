@@ -14,9 +14,7 @@ export const AuthFixture: React.FC = ({ children }) => {
 export const ProvidersFixture: React.FC = ({ children }) => (
   <AuthProvider>
     <MessagesProvider>
-      <AuthFixture>
-        {children}
-      </AuthFixture>
+      <AuthFixture>{children}</AuthFixture>
     </MessagesProvider>
   </AuthProvider>
 );

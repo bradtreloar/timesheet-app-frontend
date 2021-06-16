@@ -11,6 +11,7 @@ import {
 import * as datastore from "services/datastore";
 import { randomInt, randomUser, randomUsers } from "fixtures/random";
 import faker from "faker";
+import { omit, pick } from "lodash";
 jest.mock("services/datastore");
 
 beforeEach(() => {
@@ -52,24 +53,25 @@ test("handle failure to fetch users", async () => {
 });
 
 test("add user", async () => {
-  const testNewUser = randomUser();
-  jest.spyOn(datastore, "createUser").mockImplementation((user) => {
-    expect(user).toBe(testNewUser);
-    return Promise.resolve(user);
+  const testUser = randomUser();
+  const testUserAttributes = omit(testUser, ["id", "changed", "created"]);
+  jest.spyOn(datastore, "createUser").mockImplementation((args) => {
+    expect(args).toStrictEqual(testUserAttributes);
+    return Promise.resolve(testUser);
   });
-  const action = await store.dispatch(addUser(testNewUser));
-  expect(action.payload).toStrictEqual(testNewUser);
+  const action = await store.dispatch(addUser(testUserAttributes));
+  expect(action.payload).toStrictEqual(testUser);
   expect(action.type).toBe("users/add/fulfilled");
   const { status, users } = selectUsers(store.getState());
   expect(status).toBe("fulfilled");
-  expect(users).toStrictEqual([testNewUser]);
+  expect(users).toStrictEqual([testUser]);
 });
 
 test("handle failure to add user", async () => {
-  const testNewUser = randomUser();
+  const testUser = randomUser();
   jest.spyOn(datastore, "createUser").mockRejectedValue(undefined);
   fetchUsers();
-  const action = await store.dispatch(addUser(testNewUser));
+  const action = await store.dispatch(addUser(testUser));
   expect(action.payload).toBeUndefined();
   expect(action.type).toBe("users/add/rejected");
   const { status, users } = selectUsers(store.getState());

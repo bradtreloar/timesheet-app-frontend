@@ -5,7 +5,6 @@ import GuestRoute from "./GuestRoute";
 import { randomUser } from "fixtures/random";
 import { client } from "services/datastore";
 import MockAdapter from "axios-mock-adapter";
-import { makeUserData } from "services/adaptors";
 import { ProvidersFixture } from "fixtures/context";
 import { useAuth } from "context/auth";
 
@@ -57,8 +56,8 @@ test("renders guest route when not authenticated", async () => {
 });
 
 test("redirects to / when authenticated", async () => {
-  const mockUser = randomUser();
-  mockClient.onGet("/user").reply(200, makeUserData(mockUser));
+  const testUser = randomUser();
+  mockClient.onGet("/user").reply(200, testUser);
 
   await act(async () => {
     render(<Fixture initialEntries={["/login"]} />);
@@ -68,8 +67,8 @@ test("redirects to / when authenticated", async () => {
 });
 
 test("redirects to referer path when authenticated", async () => {
-  const mockUser = randomUser();
-  mockClient.onGet("/user").reply(200, makeUserData(mockUser));
+  const testUser = randomUser();
+  mockClient.onGet("/user").reply(200, testUser);
 
   await act(async () => {
     render(

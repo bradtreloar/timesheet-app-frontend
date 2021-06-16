@@ -12,7 +12,7 @@ const fetchUsers = createAsyncThunk("users/fetchAll", async () => {
   return await datastore.fetchUsers();
 });
 
-const addUser = createAsyncThunk("users/add", async (user: User) => {
+const addUser = createAsyncThunk("users/add", async (user: UserAttributes) => {
   return await datastore.createUser(user);
 });
 

@@ -6,8 +6,6 @@ import { Provider } from "react-redux";
 import { MemoryRouter, Route } from "react-router";
 import * as datastore from "services/datastore";
 import store from "store";
-import { setSettings } from "store/settings";
-import { setTimesheets } from "store/timesheets";
 import { setUsers } from "store/users";
 import UserIndexPage from "./UserIndexPage";
 

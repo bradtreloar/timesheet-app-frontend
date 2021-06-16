@@ -82,7 +82,9 @@ const TimesheetView: React.FC<TimesheetViewProps> = ({ timesheet }) => {
               </span>
               {DateTime.fromISO(date).toLocaleString()}
             </td>
-            <td className="text-nowrap" colSpan={4}>{reasons[reason]}</td>
+            <td className="text-nowrap" colSpan={4}>
+              {reasons[reason]}
+            </td>
           </tr>
         );
       }

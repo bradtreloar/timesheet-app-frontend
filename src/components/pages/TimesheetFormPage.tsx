@@ -24,18 +24,21 @@ const TimesheetFormPage = () => {
     formPending,
     handleSubmit: handleSubmitTimesheet,
   } = useFormController<{
-    shifts: Shift[];
-    absences: Absence[];
+    shifts: ShiftAttributes[];
+    absences: AbsenceAttributes[];
     comment: string;
   }>(async ({ shifts, absences, comment }) => {
-    if (user?.id) {
-      const timesheet: Timesheet = {
-        userID: user.id,
-        shifts,
-        absences,
-        comment,
-      };
-      const action = await store.dispatch(addTimesheet(timesheet));
+    if (user) {
+      const action = await store.dispatch(
+        addTimesheet({
+          user,
+          timesheet: {
+            comment,
+          },
+          absences,
+          shifts,
+        })
+      );
       if (action.type === "timesheets/add/fulfilled") {
         setMessage(
           "success",
@@ -55,7 +58,9 @@ const TimesheetFormPage = () => {
     }
   });
 
-  const handleSubmitDefaultShifts = async (defaultShiftValues: ShiftValues[]) => {
+  const handleSubmitDefaultShifts = async (
+    defaultShiftValues: ShiftValues[]
+  ) => {
     const updatedUser: User = Object.assign({}, user, { defaultShiftValues });
     const action = await store.dispatch(updateUser(updatedUser));
     if (action.type === "users/update/fulfilled") {

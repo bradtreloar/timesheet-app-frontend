@@ -1,251 +1,162 @@
+import { omit } from "lodash";
 import { getShiftHoursFromTimes } from "services/date";
 import { Time } from "./date";
 
-export const parseSetting = (resource: SettingResource): Setting => {
-  const {
-    id,
-    attributes: { created, changed, name, value },
-  } = resource;
-  return {
-    id,
-    changed,
-    created,
-    name,
-    value,
-  };
-};
+export const parseSetting = (resource: SettingResource): Setting => ({
+  id: resource.id,
+  ...resource.attributes,
+});
 
-export const parseAbsence = (resource: AbsenceResource): Absence => {
-  const {
-    id,
-    attributes: { created, changed, date, reason },
-  } = resource;
-  return {
-    id: id as string,
-    created: created as string,
-    changed: changed as string,
-    date,
-    reason,
-  };
-};
+export const parseAbsence = (resource: AbsenceResource): Absence => ({
+  id: resource.id,
+  ...resource.attributes,
+});
 
-export const parseShift = (resource: ShiftResource): Shift => {
-  const {
-    id,
-    attributes: { created, changed, start, end, break_duration: breakDuration },
-  } = resource;
-  return {
-    id: id as string,
-    created: created as string,
-    changed: changed as string,
-    start,
-    end,
-    breakDuration,
-  };
-};
+export const parseShift = (resource: ShiftResource): Shift => ({
+  id: resource.id,
+  ...resource.attributes,
+});
 
-export const parseTimesheet = (
-  userID: string,
-  resource: TimesheetResource
-): Timesheet => {
-  const {
-    id,
-    attributes: { created, changed, comment },
-  } = resource;
-  return {
-    id: id,
-    userID,
-    created: created as string,
-    changed: changed as string,
-    shifts: [],
-    comment,
-  };
-};
+export const parseTimesheet = (resource: TimesheetResource): Timesheet => ({
+  id: resource.id,
+  userID: resource.relationships.user.data.id,
+  shifts: [],
+  absences: [],
+  ...resource.attributes,
+});
 
-export const parseUserFromResource = (resource: UserResource): User => {
-  const {
-    id,
-    attributes: { name, email, phone_number, accepts_reminders, is_admin, default_values },
-  } = resource;
-  return {
-    id,
-    name,
-    email,
-    phoneNumber: phone_number,
-    acceptsReminders: accepts_reminders,
-    isAdmin: is_admin,
-    defaultShiftValues: JSON.parse(default_values),
-  };
-};
-
-export const parseUser = (data: UserData): User => {
-  const { id, name, email, phone_number, accepts_reminders, is_admin, default_values } = data;
-  return {
-    id: (id as number).toString(),
-    name,
-    email,
-    phoneNumber: phone_number,
-    acceptsReminders: accepts_reminders,
-    isAdmin: is_admin,
-    defaultShiftValues: JSON.parse(default_values),
-  };
-};
+export const parseUser = (resource: UserResource): User => ({
+  id: resource.id,
+  ...resource.attributes,
+});
 
 export const makeSettingResource = (setting: Setting): SettingResource => {
-  const { id, changed, created, name, value } = setting;
   const resource: SettingResource = {
-    id,
+    id: setting.id,
     type: "settings",
-    attributes: {
-      changed,
-      created,
-      name,
-      value,
-    },
+    attributes: omit(setting, ["id"]),
+    relationships: {},
   };
   return resource;
 };
+
+export const makeNewShiftResource = (
+  shiftAttributes: ShiftAttributes,
+  timesheet: Timesheet
+): NewShiftResource => ({
+  type: "shifts",
+  attributes: shiftAttributes,
+  relationships: {
+    timesheet: {
+      data: {
+        id: timesheet.id,
+        type: "timesheets",
+      },
+    },
+  },
+});
 
 export const makeShiftResource = (
   shift: Shift,
   timesheet: Timesheet
-): ShiftResource => {
-  if (timesheet.id === undefined) {
-    throw new Error(
-      `Unable to create Shift resource: timesheet must have a valid ID.`
-    );
-  }
-  const { id, start, end, breakDuration, changed, created } = shift;
-  const resource: ShiftResource = {
-    type: "shifts",
-    attributes: {
-      start,
-      end,
-      break_duration: breakDuration,
-    },
-    relationships: {
-      timesheet: {
-        data: {
-          id: timesheet.id,
-          type: "timesheets",
-        },
+): ShiftResource => ({
+  id: shift.id,
+  type: "shifts",
+  attributes: omit(shift, ["id"]),
+  relationships: {
+    timesheet: {
+      data: {
+        id: timesheet.id,
+        type: "timesheets",
       },
     },
-  };
-  if (id) {
-    resource.id = id;
-  }
-  if (changed) {
-    resource.attributes.changed = changed;
-  }
-  if (created) {
-    resource.attributes.created = created;
-  }
-  return resource;
-};
+  },
+});
+
+export const makeNewAbsenceResource = (
+  shiftAttributes: AbsenceAttributes,
+  timesheet: Timesheet
+): NewAbsenceResource => ({
+  type: "absences",
+  attributes: shiftAttributes,
+  relationships: {
+    timesheet: {
+      data: {
+        id: timesheet.id,
+        type: "timesheets",
+      },
+    },
+  },
+});
 
 export const makeAbsenceResource = (
   absence: Absence,
   timesheet: Timesheet
-): AbsenceResource => {
-  if (timesheet.id === undefined) {
-    throw new Error(
-      `Unable to create Shift resource: timesheet must have a valid ID.`
-    );
-  }
-  const { id, date, reason, changed, created } = absence;
-  const resource: AbsenceResource = {
-    type: "absences",
-    attributes: {
-      date,
-      reason
-    },
-    relationships: {
-      timesheet: {
-        data: {
-          id: timesheet.id,
-          type: "timesheets",
-        },
+): AbsenceResource => ({
+  id: absence.id,
+  type: "absences",
+  attributes: omit(absence, ["id"]),
+  relationships: {
+    timesheet: {
+      data: {
+        id: timesheet.id,
+        type: "timesheets",
       },
     },
-  };
-  if (id) {
-    resource.id = id;
-  }
-  if (changed) {
-    resource.attributes.changed = changed;
-  }
-  if (created) {
-    resource.attributes.created = created;
-  }
-  return resource;
-};
+  },
+});
+
+export const makeNewTimesheetResource = (
+  timesheetAttributes: TimesheetAttributes,
+  user: User
+): NewTimesheetResource => ({
+  type: "timesheets",
+  attributes: omit(timesheetAttributes, ["userID"]),
+  relationships: {
+    user: {
+      data: {
+        id: user.id,
+        type: "users",
+      },
+    },
+  },
+});
 
 export const makeTimesheetResource = (
   timesheet: Timesheet
-): TimesheetResource => {
-  const { id, userID, changed, created, comment } = timesheet;
-  const resource: TimesheetResource = {
-    type: "timesheets",
-    attributes: {
-      comment,
-    },
-    relationships: {
-      user: {
-        data: {
-          id: userID,
-          type: "users",
-        },
+): TimesheetResource => ({
+  id: timesheet.id,
+  type: "timesheets",
+  attributes: omit(timesheet, ["id", "userID"]),
+  relationships: {
+    user: {
+      data: {
+        id: timesheet.userID,
+        type: "users",
       },
     },
-  };
-  if (id) {
-    resource.id = id;
-  }
-  if (changed && created) {
-    resource.attributes.changed = changed;
-    resource.attributes.created = created;
-  }
-  return resource;
-};
+  },
+});
 
-export const makeUserResource = (user: User): UserResource => {
-  const { id, name, email, phoneNumber, acceptsReminders, isAdmin, defaultShiftValues } = user;
-  const resource: UserResource = {
-    type: "users",
-    attributes: {
-      name,
-      email,
-      phone_number: phoneNumber,
-      accepts_reminders: acceptsReminders,
-      is_admin: isAdmin,
-      default_values: JSON.stringify(defaultShiftValues),
-    },
-    relationships: {},
-  };
-  if (id) {
-    resource.id = id;
-  }
-  return resource;
-};
+export const makeNewUserResource = (
+  userAttributes: UserAttributes
+): NewUserResource => ({
+  type: "users",
+  attributes: userAttributes,
+  relationships: {},
+});
 
-export const makeUserData = (user: User): UserData => {
-  const { id, name, email, phoneNumber, acceptsReminders, isAdmin, defaultShiftValues } = user;
-  return {
-    id,
-    name,
-    email,
-    phone_number: phoneNumber,
-    accepts_reminders: acceptsReminders,
-    is_admin: isAdmin,
-    default_values: JSON.stringify(defaultShiftValues),
-  };
-};
+export const makeUserResource = (user: User): UserResource => ({
+  id: user.id,
+  type: "users",
+  attributes: omit(user, ["id"]),
+  relationships: {},
+});
 
 export const getShiftFromTimes = (
   date: Date,
   shiftValues: ShiftValues
-): Shift => {
+): ShiftAttributes => {
   if (shiftValues === null) {
     throw new Error(`No shift times.`);
   }

@@ -1,4 +1,3 @@
-
 export const refreshCacheAndReload = () => {
   console.log("Clearing cache and hard reloading...");
   if (caches) {

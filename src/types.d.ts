@@ -1,49 +1,62 @@
 import { reasons } from "components/forms/TimesheetForm";
 import { DateTime } from "luxon";
 
-export {};
-
 declare global {
-  type User = {
-    id?: string;
+  interface Timestamps {
+    created: string;
+    changed: string;
+  }
+
+  interface Entity extends Timestamps {
+    id: string;
+  }
+
+  interface UserAttributes {
     name: string;
     email: string;
     phoneNumber: string;
     acceptsReminders: boolean;
     isAdmin: boolean;
     defaultShiftValues: ShiftValues[];
-  };
+  }
 
-  type Timesheet = {
-    id?: string;
-    created?: string;
-    changed?: string;
-    userID: string;
-    shifts?: Shift[];
-    absences?: Absence[];
+  interface User extends Entity, UserAttributes {}
+
+  interface TimesheetAttributes {
     comment: string;
-  };
+  }
 
-  type Shift = {
-    id?: string;
-    created?: string;
-    changed?: string;
+  interface Timesheet extends Entity, TimesheetAttributes {
+    userID: string;
+    shifts: Shift[];
+    absences: Absence[];
+  }
+
+  interface ShiftAttributes {
     start: string;
     end: string;
     breakDuration: number;
-  };
+  }
 
-  type Absence = {
-    id?: string;
-    created?: string;
-    changed?: string;
+  interface Shift extends Entity, ShiftAttributes {}
+
+  interface AbsenceAttributes {
     date: string;
     reason: Reason;
   }
 
+  interface Absence extends Entity, AbsenceAttributes {}
+
+  interface SettingAttributes {
+    name: string;
+    value: string;
+  }
+
+  interface Setting extends Entity, SettingAttributes {}
+
   type Reason = keyof typeof reasons;
 
-  type ShiftValues = {
+  interface ShiftValues {
     isActive: boolean;
     reason: Reason;
     startTime: {
@@ -58,123 +71,112 @@ declare global {
       hour: string;
       minute: string;
     };
-  };
+  }
 
-  type Setting = {
-    id: string;
-    created: string;
-    changed: string;
-    name: string;
-    value: string;
-  };
-
-  type Settings = {
+  interface Settings {
     timesheetRecipients: string;
-  };
+  }
 
-  interface RelatedResourceData<T> {
+  interface ResourceProps<T> {
     id: string;
     type: T;
   }
 
+  interface Resource<T, A, R> extends ResourceProps<T> {
+    attributes: Timestamps & A;
+    relationships: R;
+  }
+
+  interface NewResource<T, A> {
+    type: T;
+    attributes: A;
+  }
+
   interface RelatedResource<T> {
-    data: RelatedResourceData<T>;
+    data: ResourceProps<T>;
   }
 
   interface RelatedResourceArray<T> {
-    data: RelatedResourceData<T>[];
+    data: ResourceProps<T>[];
   }
 
-  interface UserData {
-    id?: string | number;
-    name: string;
-    email: string;
-    phone_number: string;
-    accepts_reminders: boolean;
-    is_admin: boolean;
-    default_values: string;
-  }
+  interface UserResource
+    extends Resource<
+      "users",
+      UserAttributes,
+      {
+        timesheets?: RelatedResourceArray<"timesheets">;
+      }
+    > {}
 
-  interface UserResource {
-    id?: string;
-    type: "users";
-    attributes: {
-      name: string;
-      email: string;
-      phone_number: string;
-      accepts_reminders: boolean;
-      is_admin: boolean;
-      default_values: string;
-      created?: string;
-      changed?: string;
-    };
-    relationships: {
-      timesheets?: RelatedResourceArray<"timesheets">;
-    };
-  }
+  interface NewUserResource extends NewResource<"users", UserAttributes, {}> {}
 
-  interface TimesheetResource {
-    id?: string;
-    type: "timesheets";
-    attributes: {
-      created?: string;
-      changed?: string;
-      comment: string;
-    };
-    relationships: {
-      user: RelatedResource<"users">;
-      shifts?: RelatedResourceArray<"shifts">;
-      absences?: RelatedResourceArray<"absences">;
-    };
-  }
+  interface TimesheetResource
+    extends Resource<
+      "timesheets",
+      TimesheetAttributes,
+      {
+        user: RelatedResource<"users">;
+        shifts?: RelatedResourceArray<"shifts">;
+        absences?: RelatedResourceArray<"absences">;
+      }
+    > {}
 
-  interface ShiftResource {
-    id?: string;
-    type: "shifts";
-    attributes: {
-      created?: string;
-      changed?: string;
-      start: string;
-      end: string;
-      break_duration: number;
-    };
-    relationships: {
-      timesheet: RelatedResource<"timesheets">;
-    };
-  }
+  interface NewTimesheetResource
+    extends NewResource<
+      "timesheets",
+      TimesheetAttributes,
+      {
+        user: RelatedResource<"users">;
+      }
+    > {}
 
-  interface AbsenceResource {
-    id?: string;
-    type: "absences";
-    attributes: {
-      created?: string;
-      changed?: string;
-      date: string;
-      reason: Reason;
-    };
-    relationships: {
-      timesheet: RelatedResource<"timesheets">;
-    };
-  }
+  interface ShiftResource
+    extends Resource<
+      "shifts",
+      ShiftAttributes,
+      {
+        timesheet: RelatedResource<"timesheets">;
+      }
+    > {}
 
-  type SettingResource = {
-    id: string;
-    type: "settings";
-    attributes: {
-      created: string;
-      changed: string;
-      name: string;
-      value: string;
-    };
-  };
+  interface NewShiftResource
+    extends NewResource<
+      "shifts",
+      ShiftAttributes,
+      {
+        timesheet: RelatedResource<"timesheets">;
+      }
+    > {}
+
+  interface AbsenceResource
+    extends Resource<
+      "absences",
+      AbsenceAttributes,
+      {
+        timesheet: RelatedResource<"timesheets">;
+      }
+    > {}
+
+  interface NewAbsenceResource
+    extends NewResource<
+      "absences",
+      AbsenceAttributes,
+      {
+        timesheet: RelatedResource<"timesheets">;
+      }
+    > {}
+
+  interface SettingResource
+    extends Resource<"settings", SettingAttributes, {}> {}
 
   type MessageType = "success" | "warning" | "danger";
 
-  type Message = {
+  interface Message {
     id: string;
     value: string | JSX.Element;
     type: MessageType;
     tags: string[];
     created: DateTime;
-  };
+  }
 }

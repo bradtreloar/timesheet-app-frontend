@@ -26,14 +26,16 @@ const getFixtures = () => {
   testTimesheet.comment = "";
   const testShifts = testTimesheet.shifts as Shift[];
   // Make the user's default shift times coincide with the test timesheet's times.
-  testUser.defaultShiftValues = testShifts.map((shift) => getTimesFromShift(shift));
+  testUser.defaultShiftValues = testShifts.map((shift) =>
+    getTimesFromShift(shift)
+  );
 
   return {
     testTimesheet,
     testShifts,
     testUser,
   };
-}
+};
 
 export const EMPTY_SHIFT_TIMES = {
   isActive: false,
@@ -72,7 +74,7 @@ afterEach(() => {
 test("renders timesheet page", async () => {
   const { testUser } = getFixtures();
   jest.spyOn(datastore, "fetchCurrentUser").mockResolvedValue(testUser);
-  
+
   await act(async () => {
     render(<Fixture />);
   });
@@ -84,7 +86,9 @@ test("handles timesheet submission", async () => {
   const { testShifts, testTimesheet, testUser } = getFixtures();
   jest.spyOn(datastore, "fetchCurrentUser").mockResolvedValue(testUser);
   jest.spyOn(datastore, "createTimesheet").mockResolvedValue(testTimesheet);
-  jest.spyOn(datastore, "createShifts").mockResolvedValue(testShifts);
+  testShifts.forEach((shift) => {
+    jest.spyOn(datastore, "createShift").mockResolvedValueOnce(shift);
+  });
   jest.spyOn(datastore, "completeTimesheet").mockResolvedValue(testTimesheet);
 
   await act(async () => {
@@ -96,12 +100,12 @@ test("handles timesheet submission", async () => {
     userEvent.click(screen.getByText(/^submit/i));
   });
   await screen.findByText(/form submitted/i);
-  expect(datastore.createTimesheet).toHaveBeenCalledWith({
-    userID: testTimesheet.userID,
-    absences: [],
-    shifts: testTimesheet.shifts,
-    comment: testTimesheet.comment,
-  });
+  expect(datastore.createTimesheet).toHaveBeenCalledWith(
+    {
+      comment: testTimesheet.comment,
+    },
+    testUser
+  );
 });
 
 test("displays error when timesheet creation fails", async () => {
@@ -122,12 +126,6 @@ test("displays error when timesheet creation fails", async () => {
     userEvent.click(screen.getByText(/^submit/i));
   });
   await screen.findByText(errorMessage);
-  expect(datastore.createTimesheet).toHaveBeenCalledWith({
-    userID: testTimesheet.userID,
-    absences: [],
-    shifts: testTimesheet.shifts,
-    comment: testTimesheet.comment,
-  });
 });
 
 test("updates the user's default shifts and shows a confirmation message", async () => {
@@ -144,7 +142,10 @@ test("updates the user's default shifts and shows a confirmation message", async
 
   expect(screen.getByRole("heading")).toHaveTextContent(/new timesheet/i);
   userEvent.click(screen.getByTestId("shift-0-toggle"));
-  userEvent.selectOptions(screen.getByTestId("shift-0-reason"), "rostered-day-off");
+  userEvent.selectOptions(
+    screen.getByTestId("shift-0-reason"),
+    "rostered-day-off"
+  );
   await act(async () => {
     userEvent.click(screen.getByText(/save these shifts as my default/i));
   });

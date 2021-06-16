@@ -2,16 +2,18 @@ import axios, { AxiosResponse } from "axios";
 import { API_HOST } from "settings";
 import {
   parseTimesheet,
-  makeTimesheetResource,
   parseShift,
   makeShiftResource,
   parseSetting,
   makeSettingResource,
   parseUser,
-  parseUserFromResource,
   makeUserResource,
   makeAbsenceResource,
   parseAbsence,
+  makeNewTimesheetResource,
+  makeNewShiftResource,
+  makeNewAbsenceResource,
+  makeNewUserResource,
 } from "./adaptors";
 import { orderBy } from "lodash";
 
@@ -33,14 +35,18 @@ export const jsonAPIClient = axios.create({
   },
 });
 
-export const login = async (email: string, password: string, remember: boolean): Promise<User> => {
+export const login = async (
+  email: string,
+  password: string,
+  remember: boolean
+): Promise<User> => {
   await client.get("/csrf-cookie");
-  const response: AxiosResponse<UserData> = await client.post("/login", {
+  const response: AxiosResponse<User> = await client.post("/login", {
     email,
     password,
     remember,
   });
-  return parseUser(response.data);
+  return response.data;
 };
 
 export const logout = async () => {
@@ -76,12 +82,12 @@ export const resetPassword = async (
 };
 
 export const fetchCurrentUser = async (): Promise<User | null> => {
-  const response: AxiosResponse<UserData> = await client.get(`/user`);
+  const response: AxiosResponse<User> = await client.get(`/user`);
   if (response.status === 204) {
     // No current user.
     return null;
   }
-  return parseUser(response.data);
+  return response.data;
 };
 
 export const fetchUsers = async (): Promise<User[]> => {
@@ -90,20 +96,22 @@ export const fetchUsers = async (): Promise<User[]> => {
   }> = await jsonAPIClient.get(`users`);
   const { data } = response.data;
   return data.map((resource: UserResource) => {
-    return parseUserFromResource(resource);
+    return parseUser(resource);
   });
 };
 
-export const createUser = async (user: User): Promise<User> => {
+export const createUser = async (
+  userAttributes: UserAttributes
+): Promise<User> => {
   await client.get("/csrf-cookie");
-  const userResource: UserResource = makeUserResource(user);
+  const userResource: NewUserResource = makeNewUserResource(userAttributes);
   const response: AxiosResponse<{
     data: UserResource;
   }> = await jsonAPIClient.post(`/users`, {
     data: userResource,
   });
   const { data } = response.data;
-  return parseUserFromResource(data);
+  return parseUser(data);
 };
 
 export const updateUser = async (user: User): Promise<User> => {
@@ -115,7 +123,7 @@ export const updateUser = async (user: User): Promise<User> => {
     data: userResource,
   });
   const { data } = response.data;
-  return parseUserFromResource(data);
+  return parseUser(data);
 };
 
 export const deleteUser = async (user: User): Promise<User> => {
@@ -156,7 +164,7 @@ export const fetchTimesheets = async (user: User): Promise<Timesheet[]> => {
   );
 
   const timesheets = data.map((resource: TimesheetResource) => {
-    const timesheet = parseTimesheet(user.id as string, resource);
+    const timesheet = parseTimesheet(resource);
     const relatedShiftResources = resource.relationships.shifts;
     const relatedAbsenceResources = resource.relationships.absences;
     if (relatedShiftResources !== undefined) {
@@ -183,62 +191,52 @@ export const fetchTimesheets = async (user: User): Promise<Timesheet[]> => {
   return timesheets;
 };
 
-export const createShifts = async (
-  shifts: Shift[],
+export const createShift = async (
+  shiftAttributes: ShiftAttributes,
   timesheet: Timesheet
-): Promise<Shift[]> => {
+): Promise<Shift> => {
   await client.get("/csrf-cookie");
-  const shiftResources: ShiftResource[] = shifts.map((shift) =>
-    makeShiftResource(shift, timesheet)
-  );
-  const createdShifts = await Promise.all(
-    shiftResources.map(async (shiftResource) => {
-      const response: AxiosResponse<{
-        data: ShiftResource;
-      }> = await jsonAPIClient.post(`/shifts`, {
-        data: shiftResource,
-      });
-      const { data } = response.data;
-      return parseShift(data);
-    })
-  );
-  return createdShifts;
+  const shiftResource = makeNewShiftResource(shiftAttributes, timesheet);
+  const response: AxiosResponse<{
+    data: ShiftResource;
+  }> = await jsonAPIClient.post(`/shifts`, {
+    data: shiftResource,
+  });
+  const { data } = response.data;
+  return parseShift(data);
 };
 
-export const createAbsences = async (
-  absences: Absence[],
+export const createAbsence = async (
+  absenceAttributes: AbsenceAttributes,
   timesheet: Timesheet
-): Promise<Absence[]> => {
+): Promise<Absence> => {
   await client.get("/csrf-cookie");
-  const absenceResources: AbsenceResource[] = absences.map((absence) =>
-    makeAbsenceResource(absence, timesheet)
-  );
-  const createdAbsences = await Promise.all(
-    absenceResources.map(async (absenceResource) => {
-      const response: AxiosResponse<{
-        data: AbsenceResource;
-      }> = await jsonAPIClient.post(`/absences`, {
-        data: absenceResource,
-      });
-      const { data } = response.data;
-      return parseAbsence(data);
-    })
-  );
-  return createdAbsences;
+  const absenceResource = makeNewAbsenceResource(absenceAttributes, timesheet);
+  const response: AxiosResponse<{
+    data: AbsenceResource;
+  }> = await jsonAPIClient.post(`/absences`, {
+    data: absenceResource,
+  });
+  const { data } = response.data;
+  return parseAbsence(data);
 };
 
 export const createTimesheet = async (
-  timesheet: Timesheet
+  timesheetAttributes: TimesheetAttributes,
+  user: User
 ): Promise<Timesheet> => {
   await client.get("/csrf-cookie");
-  const timesheetResource: TimesheetResource = makeTimesheetResource(timesheet);
+  const timesheetResource: NewTimesheetResource = makeNewTimesheetResource(
+    timesheetAttributes,
+    user
+  );
   const response: AxiosResponse<{
     data: TimesheetResource;
   }> = await jsonAPIClient.post(`/timesheets`, {
     data: timesheetResource,
   });
   const { data } = response.data;
-  return parseTimesheet(timesheet.userID, data);
+  return parseTimesheet(data);
 };
 
 export const deleteTimesheet = async (

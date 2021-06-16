@@ -5,7 +5,6 @@ import ProtectedRoute from "./ProtectedRoute";
 import { randomUser } from "fixtures/random";
 import { client } from "services/datastore";
 import MockAdapter from "axios-mock-adapter";
-import { makeUserData } from "services/adaptors";
 import { ProvidersFixture } from "fixtures/context";
 import { useAuth } from "context/auth";
 
@@ -50,8 +49,8 @@ test("redirects to /login when not authenticated", async () => {
 });
 
 test("renders protected route when authenticated", async () => {
-  const mockUser = randomUser();
-  mockClient.onGet("/user").reply(200, makeUserData(mockUser));
+  const testUser = randomUser();
+  mockClient.onGet("/user").reply(200, testUser);
   await act(async () => {
     render(<Fixture />);
   });

@@ -28,10 +28,6 @@ const useForm = <T>(
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  // React.useEffect(() => {
-  //   console.log("focusedInput:", focusedInput);
-  // }, [focusedInput]);
-
   const visibleErrors = useMemo(() => {
     const visibleErrors = {} as FormVisibleErrors<T>;
 
@@ -85,10 +81,8 @@ const useForm = <T>(
   };
 
   const handleFocus = (event: any) => {
-    const target = event.target;
-    const name = target.name;
-    setFocusedInput(target.name);
-  }
+    setFocusedInput(event.target.name);
+  };
 
   const handleBlur = (event: any) => {
     const target = event.target;
