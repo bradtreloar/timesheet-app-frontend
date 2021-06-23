@@ -132,8 +132,8 @@ export const randomTimesheet = (
   });
 };
 
-export const randomTimesheets = (user: User, count: number) =>
-  range(count).map(() => randomTimesheet(user));
+export const randomTimesheets = (user: User, count?: number) =>
+  range(count || 5).map(() => randomTimesheet(user));
 
 export const randomSettings = (
   settings?: {
@@ -151,3 +151,15 @@ export const randomSettings = (
 export const randomSettingsObject = (): Settings => ({
   timesheetRecipients: faker.internet.email(),
 });
+
+export const randomPreset = (
+  user: User,
+  partialPreset?: Partial<Preset>
+): Preset =>
+  defaults(partialPreset, {
+    userID: user.id,
+    value: range(7).map((index) => randomShiftValues()),
+  }) as Preset;
+
+export const randomPresets = (user: User, count?: number) =>
+  range(count || 5).map(() => randomPreset(user));

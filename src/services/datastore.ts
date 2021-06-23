@@ -14,6 +14,7 @@ import {
   makeNewShiftResource,
   makeNewAbsenceResource,
   makeNewUserResource,
+  parsePreset,
 } from "./adaptors";
 import { orderBy } from "lodash";
 
@@ -298,4 +299,14 @@ export const updateSettings = async (
       return parseSetting(data);
     })
   );
+};
+
+export const fetchPresets = async (user: User): Promise<Preset[]> => {
+  const response: AxiosResponse<{
+    data: PresetResource[];
+  }> = await jsonAPIClient.get(`users/${user.id}/presets`);
+  const { data } = response.data;
+  return data.map((resource: PresetResource) => {
+    return parsePreset(resource);
+  });
 };

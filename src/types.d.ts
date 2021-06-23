@@ -47,6 +47,14 @@ declare global {
 
   interface Absence extends Entity, AbsenceAttributes {}
 
+  interface PresetAttributes {
+    value: ShiftValues[];
+  }
+
+  interface Preset extends Entity, PresetAttributes {
+    userID: string;
+  }
+
   interface SettingAttributes {
     name: string;
     value: string;
@@ -164,6 +172,24 @@ declare global {
       AbsenceAttributes,
       {
         timesheet: RelatedResource<"timesheets">;
+      }
+    > {}
+
+  interface PresetResource
+    extends Resource<
+      "presets",
+      PresetAttributes,
+      {
+        user: RelatedResource<"users">;
+      }
+    > {}
+
+  interface NewPresetResource
+    extends NewResource<
+      "presets",
+      PresetAttributes,
+      {
+        user: RelatedResource<"users">;
       }
     > {}
 

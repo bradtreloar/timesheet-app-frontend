@@ -30,6 +30,12 @@ export const parseUser = (resource: UserResource): User => ({
   ...resource.attributes,
 });
 
+export const parsePreset = (resource: PresetResource): Preset => ({
+  id: resource.id,
+  userID: resource.relationships.user.data.id,
+  ...resource.attributes,
+});
+
 export const makeSettingResource = (setting: Setting): SettingResource => {
   const resource: SettingResource = {
     id: setting.id,
