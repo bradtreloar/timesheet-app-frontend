@@ -1,5 +1,5 @@
 import randomstring from "randomstring";
-import { Time } from "services/date";
+import { Time } from "utils/date";
 import faker from "faker";
 import { defaults, random as randomNumber, range } from "lodash";
 import { DateTime } from "luxon";

@@ -3,7 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import { act, render, screen } from "@testing-library/react";
 import Navbar from "./Navbar";
 import { ProvidersFixture } from "fixtures/context";
-import { client } from "services/datastore";
+import { client } from "datastore";
 import MockAdapter from "axios-mock-adapter";
 
 // Mock the HTTP client used by the datastore.

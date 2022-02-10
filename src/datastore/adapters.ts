@@ -1,6 +1,30 @@
 import { omit } from "lodash";
-import { getShiftHoursFromTimes } from "services/date";
-import { Time } from "./date";
+import {
+  Absence,
+  AbsenceAttributes,
+  Preset,
+  Setting,
+  Shift,
+  ShiftAttributes,
+  ShiftValues,
+  Timesheet,
+  TimesheetAttributes,
+  User,
+  UserAttributes,
+} from "store/types";
+import { Time, getShiftHoursFromTimes } from "utils/date";
+import {
+  AbsenceResource,
+  NewAbsenceResource,
+  NewShiftResource,
+  NewTimesheetResource,
+  NewUserResource,
+  PresetResource,
+  SettingResource,
+  ShiftResource,
+  TimesheetResource,
+  UserResource,
+} from "./types";
 
 export const parseSetting = (resource: SettingResource): Setting => ({
   id: resource.id,
@@ -52,14 +76,6 @@ export const makeNewShiftResource = (
 ): NewShiftResource => ({
   type: "shifts",
   attributes: shiftAttributes,
-  relationships: {
-    timesheet: {
-      data: {
-        id: timesheet.id,
-        type: "timesheets",
-      },
-    },
-  },
 });
 
 export const makeShiftResource = (
@@ -85,14 +101,6 @@ export const makeNewAbsenceResource = (
 ): NewAbsenceResource => ({
   type: "absences",
   attributes: shiftAttributes,
-  relationships: {
-    timesheet: {
-      data: {
-        id: timesheet.id,
-        type: "timesheets",
-      },
-    },
-  },
 });
 
 export const makeAbsenceResource = (
@@ -117,15 +125,7 @@ export const makeNewTimesheetResource = (
   user: User
 ): NewTimesheetResource => ({
   type: "timesheets",
-  attributes: omit(timesheetAttributes, ["userID"]),
-  relationships: {
-    user: {
-      data: {
-        id: user.id,
-        type: "users",
-      },
-    },
-  },
+  attributes: timesheetAttributes,
 });
 
 export const makeTimesheetResource = (
@@ -149,7 +149,6 @@ export const makeNewUserResource = (
 ): NewUserResource => ({
   type: "users",
   attributes: userAttributes,
-  relationships: {},
 });
 
 export const makeUserResource = (user: User): UserResource => ({

@@ -1,5 +1,5 @@
 import React, { useContext, createContext, useCallback } from "react";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 
 type Status = "idle" | "pending" | "fulfilled" | "rejected";
 

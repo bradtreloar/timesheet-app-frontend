@@ -9,10 +9,10 @@ import {
   randomTimesheets,
   randomUser,
 } from "../fixtures/random";
-import * as datastore from "../services/datastore";
+import * as datastore from "../datastore";
 import { Provider } from "react-redux";
 import store from "../store";
-jest.mock("services/datastore");
+jest.mock("datastore");
 
 const mockUser = randomUser();
 const mockPassword = randomPassword();

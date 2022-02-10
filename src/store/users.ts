@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 import { RootState } from ".";
 
 export interface UsersState {

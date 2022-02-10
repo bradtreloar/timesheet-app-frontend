@@ -4,20 +4,22 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route } from "react-router-dom";
 import { ProvidersFixture } from "fixtures/context";
 import { randomSettings, randomTimesheet, randomUser } from "fixtures/random";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 import { Provider } from "react-redux";
 import store from "store";
 import { clearSettings, setSettings } from "store/settings";
-import { getTimesFromShift } from "services/adaptors";
+import { getTimesFromShift } from "datastore/adapters";
 import SettingsPage from "./SettingsPage";
 import { DateTime } from "luxon";
 
-jest.mock("services/datastore");
+jest.mock("datastore");
 const testUser = randomUser();
 const testTimesheet = randomTimesheet(testUser);
 const testShifts = testTimesheet.shifts as Shift[];
 // Make the user's default shift times coincide with the test timesheet's times.
-testUser.defaultShiftValues = testShifts.map((shift) => getTimesFromShift(shift));
+testUser.defaultShiftValues = testShifts.map((shift) =>
+  getTimesFromShift(shift)
+);
 // Make the first day of the week coincide with the date of the first shift
 // in testTimesheet.
 const testSettings = randomSettings();
@@ -52,7 +54,7 @@ test("renders settings page", async () => {
 
 test("handles SettingsForm submission", async () => {
   jest.spyOn(datastore, "updateSettings").mockResolvedValue(testSettings);
-  
+
   await act(async () => {
     render(<Fixture />);
   });
@@ -66,7 +68,9 @@ test("handles SettingsForm submission", async () => {
 
 test("displays error when settings update fails", async () => {
   const errorMessage = "unable to save settings";
-  jest.spyOn(datastore, "updateSettings").mockRejectedValue(new Error(errorMessage));
+  jest
+    .spyOn(datastore, "updateSettings")
+    .mockRejectedValue(new Error(errorMessage));
 
   await act(async () => {
     render(<Fixture />);

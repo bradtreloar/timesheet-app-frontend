@@ -2,7 +2,7 @@ import React from "react";
 import { MemoryRouter, Route } from "react-router-dom";
 import { act, render, screen } from "@testing-library/react";
 import { randomUser } from "fixtures/random";
-import { client } from "services/datastore";
+import { client } from "datastore";
 import MockAdapter from "axios-mock-adapter";
 import AdminRoute from "./AdminRoute";
 import { ProvidersFixture } from "fixtures/context";

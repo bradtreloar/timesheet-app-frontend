@@ -6,9 +6,9 @@ import { ProvidersFixture } from "fixtures/context";
 import { MemoryRouter, Route } from "react-router-dom";
 import { randomPassword, randomUser } from "fixtures/random";
 import PasswordResetPage from "./PasswordResetPage";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 
-jest.mock("services/datastore");
+jest.mock("datastore");
 const testPassword = randomPassword();
 const testUser = randomUser();
 const testToken = randomstring.generate(30);
@@ -16,7 +16,9 @@ const testToken = randomstring.generate(30);
 const Fixture: React.FC = () => {
   return (
     <ProvidersFixture>
-      <MemoryRouter initialEntries={[`/reset-password/${testUser.email}/${testToken}`]}>
+      <MemoryRouter
+        initialEntries={[`/reset-password/${testUser.email}/${testToken}`]}
+      >
         <Route path="/reset-password/:email/:token">
           <PasswordResetPage />
         </Route>
@@ -54,7 +56,11 @@ test("handles PasswordForm submission", async () => {
   await act(async () => {
     userEvent.click(screen.getByTestId("password-form-submit"));
   });
-  expect(datastore.resetPassword).toHaveBeenCalledWith(testUser.email, testToken, testPassword);
+  expect(datastore.resetPassword).toHaveBeenCalledWith(
+    testUser.email,
+    testToken,
+    testPassword
+  );
 });
 
 test("displays error when password update fails", async () => {

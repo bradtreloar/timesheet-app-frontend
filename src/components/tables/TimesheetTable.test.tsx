@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import TimesheetTable from "./TimesheetTable";
 import { randomTimesheets, randomUser } from "fixtures/random";
-import { getTimesheetTotalHours } from "services/date";
+import { getTimesheetTotalHours } from "utils/date";
 import { MemoryRouter } from "react-router";
 import { DateTime } from "luxon";
 

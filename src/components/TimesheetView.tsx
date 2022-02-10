@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import React, { useMemo } from "react";
-import { getShiftHours, Time } from "services/date";
+import { getShiftHours, Time } from "utils/date";
 import { reasons } from "./forms/TimesheetForm";
 
 const isShift = (entry: Shift | Absence) =>

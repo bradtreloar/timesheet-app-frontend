@@ -4,12 +4,12 @@ import { ProvidersFixture } from "fixtures/context";
 import { MemoryRouter, Route } from "react-router-dom";
 import { randomTimesheet, randomUser } from "fixtures/random";
 import TimesheetViewPage from "./TimesheetViewPage";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 import { Provider } from "react-redux";
 import store from "store";
 import { setTimesheets } from "store/timesheets";
 
-jest.mock("services/datastore");
+jest.mock("datastore");
 const testUser = randomUser();
 const testTimesheet = randomTimesheet(testUser);
 

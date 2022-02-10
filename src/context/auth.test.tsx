@@ -3,7 +3,7 @@ import { render, act } from "@testing-library/react";
 import { screen } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
 import { AuthProvider, useAuth } from "./auth";
-import { client } from "services/datastore";
+import { client } from "datastore";
 import { randomPassword, randomUser } from "fixtures/random";
 import randomstring from "randomstring";
 import MockAdapter from "axios-mock-adapter";

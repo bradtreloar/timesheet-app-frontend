@@ -6,9 +6,9 @@ import {
   selectPresets,
   setPresets,
 } from "./presets";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 import { clearUsers, setUsers } from "./users";
-jest.mock("services/datastore");
+jest.mock("datastore");
 
 const testUser = randomUser();
 

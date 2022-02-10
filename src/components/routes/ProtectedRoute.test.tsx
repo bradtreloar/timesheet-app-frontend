@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Switch } from "react-router-dom";
 import { act, render, screen } from "@testing-library/react";
 import ProtectedRoute from "./ProtectedRoute";
 import { randomUser } from "fixtures/random";
-import { client } from "services/datastore";
+import { client } from "datastore";
 import MockAdapter from "axios-mock-adapter";
 import { ProvidersFixture } from "fixtures/context";
 import { useAuth } from "context/auth";

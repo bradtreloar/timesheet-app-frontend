@@ -8,11 +8,7 @@ import React, {
 } from "react";
 import { isEmpty, range } from "lodash";
 import classnames from "classnames";
-import {
-  getShiftHoursFromTimes,
-  InvalidTimeException,
-  Time,
-} from "services/date";
+import { getShiftHoursFromTimes, InvalidTimeException, Time } from "utils/date";
 import useForm, { FormErrors } from "hooks/useForm";
 import WeekSelect from "components/inputs/WeekSelect";
 import TimeInput from "components/inputs/TimeInput";

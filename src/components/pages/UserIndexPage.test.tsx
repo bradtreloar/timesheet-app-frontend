@@ -1,15 +1,20 @@
 import { act, render, screen } from "@testing-library/react";
 import { ProvidersFixture } from "fixtures/context";
-import { randomSettings, randomTimesheets, randomUser, randomUsers } from "fixtures/random";
+import {
+  randomSettings,
+  randomTimesheets,
+  randomUser,
+  randomUsers,
+} from "fixtures/random";
 import React from "react";
 import { Provider } from "react-redux";
 import { MemoryRouter, Route } from "react-router";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 import store from "store";
 import { setUsers } from "store/users";
 import UserIndexPage from "./UserIndexPage";
 
-jest.mock("services/datastore");
+jest.mock("datastore");
 const testUser = randomUser();
 const testUsers = randomUsers(3);
 

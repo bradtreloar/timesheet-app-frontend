@@ -6,7 +6,7 @@ import {
   selectTimesheets,
   clearTimesheets,
 } from "./timesheets";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 import {
   randomInt,
   randomTimesheet,
@@ -14,7 +14,7 @@ import {
   randomUser,
 } from "fixtures/random";
 import { pick } from "lodash";
-jest.mock("services/datastore");
+jest.mock("datastore");
 
 const testUser = randomUser();
 

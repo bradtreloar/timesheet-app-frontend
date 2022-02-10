@@ -5,14 +5,14 @@ import { DateTime } from "luxon";
 import React from "react";
 import { Provider } from "react-redux";
 import { MemoryRouter, Route } from "react-router";
-import * as datastore from "services/datastore";
-import { getTimesheetTotalHours } from "services/date";
+import * as datastore from "datastore";
+import { getTimesheetTotalHours } from "utils/date";
 import store from "store";
 import { setSettings } from "store/settings";
 import { setTimesheets } from "store/timesheets";
 import TimesheetIndexPage from "./TimesheetIndexPage";
 
-jest.mock("services/datastore");
+jest.mock("datastore");
 const testUser = randomUser();
 const testTimesheets = randomTimesheets(testUser, 3);
 const testSettings = randomSettings();

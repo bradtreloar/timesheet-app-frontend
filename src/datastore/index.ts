@@ -15,8 +15,30 @@ import {
   makeNewAbsenceResource,
   makeNewUserResource,
   parsePreset,
-} from "./adaptors";
+} from "./adapters";
 import { orderBy } from "lodash";
+import {
+  AbsenceResource,
+  NewTimesheetResource,
+  NewUserResource,
+  PresetResource,
+  SettingResource,
+  ShiftResource,
+  TimesheetResource,
+  UserResource,
+} from "./types";
+import {
+  Absence,
+  AbsenceAttributes,
+  Preset,
+  Setting,
+  Shift,
+  ShiftAttributes,
+  Timesheet,
+  TimesheetAttributes,
+  User,
+  UserAttributes,
+} from "store/types";
 
 export const client = axios.create({
   baseURL: `${API_HOST}`,

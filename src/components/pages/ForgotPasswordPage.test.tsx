@@ -5,9 +5,9 @@ import { ProvidersFixture } from "fixtures/context";
 import { MemoryRouter } from "react-router-dom";
 import { randomUser } from "fixtures/random";
 import ForgotPasswordPage from "./ForgotPasswordPage";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 
-jest.mock("services/datastore");
+jest.mock("datastore");
 jest.spyOn(datastore, "fetchCurrentUser").mockResolvedValue(null);
 const testUser = randomUser();
 

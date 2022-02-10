@@ -5,9 +5,9 @@ import { ProvidersFixture } from "fixtures/context";
 import { MemoryRouter } from "react-router-dom";
 import { randomPassword, randomUser } from "fixtures/random";
 import PasswordPage from "./PasswordPage";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 
-jest.mock("services/datastore");
+jest.mock("datastore");
 const testUser = randomUser();
 const testPassword = randomPassword();
 

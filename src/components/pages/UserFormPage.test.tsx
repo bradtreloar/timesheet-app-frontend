@@ -11,12 +11,12 @@ import React from "react";
 import { Provider } from "react-redux";
 import { MemoryRouter, Route } from "react-router";
 import faker from "faker";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 import store from "store";
 import { clearUsers, setUsers } from "store/users";
 import UserFormPage from "./UserFormPage";
 
-jest.mock("services/datastore");
+jest.mock("datastore");
 const testUser = randomUser();
 const testNewUser = randomUser();
 const testUpdatedUser = Object.assign({}, testUser, {

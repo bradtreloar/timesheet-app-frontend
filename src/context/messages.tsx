@@ -1,6 +1,7 @@
 import React, { useContext, createContext, useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { DateTime } from "luxon";
+import { Message, MessageType } from "./types";
 
 /**
  * The minimum time in seconds that a message should be displayed before it can

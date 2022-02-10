@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 import { RootState } from ".";
 
 export interface PresetsState {
@@ -61,9 +61,6 @@ const presetsSlice = createSlice({
 const selectPresets = (state: RootState) => state.presets;
 
 export { fetchPresets };
-export const {
-  clear: clearPresets,
-  set: setPresets,
-} = presetsSlice.actions;
+export const { clear: clearPresets, set: setPresets } = presetsSlice.actions;
 export default presetsSlice.reducer;
 export { selectPresets };

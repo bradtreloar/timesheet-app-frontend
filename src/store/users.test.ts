@@ -8,11 +8,11 @@ import {
   setUsers,
   deleteUser,
 } from "./users";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 import { randomInt, randomUser, randomUsers } from "fixtures/random";
 import faker from "faker";
 import { omit, pick } from "lodash";
-jest.mock("services/datastore");
+jest.mock("datastore");
 
 beforeEach(() => {
   jest.useFakeTimers();

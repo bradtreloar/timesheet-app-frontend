@@ -10,15 +10,15 @@ import {
   randomUser,
 } from "fixtures/random";
 import TimesheetFormPage from "./TimesheetFormPage";
-import * as datastore from "services/datastore";
+import * as datastore from "datastore";
 import { Provider } from "react-redux";
 import store from "store";
 import { setSettings } from "store/settings";
-import { getTimesFromShift } from "services/adaptors";
+import { getTimesFromShift } from "datastore/adapters";
 import { DateTime } from "luxon";
 import { cloneDeep } from "lodash";
 
-jest.mock("services/datastore");
+jest.mock("datastore");
 
 const getFixtures = () => {
   const testUser = randomUser();
