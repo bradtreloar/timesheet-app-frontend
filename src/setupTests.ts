@@ -3,3 +3,18 @@
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import "@testing-library/jest-dom/extend-expect";
+
+import { DateTime, Settings as LuxonSettings } from "luxon";
+
+LuxonSettings.defaultZoneName = "utc";
+
+const mockNow = DateTime.fromObject({
+  year: 2000,
+  month: 1,
+  day: 1,
+  hour: 12,
+  minute: 0,
+  second: 0,
+  millisecond: 0,
+});
+LuxonSettings.now = () => mockNow.toMillis();

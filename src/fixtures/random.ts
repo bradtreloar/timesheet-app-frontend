@@ -1,19 +1,28 @@
-import randomstring from "randomstring";
+import Randomstring from "randomstring";
 import { Time } from "utils/date";
 import faker from "faker";
-import { defaults, random as randomNumber, range } from "lodash";
+import { defaults, random, random as randomNumber, range } from "lodash";
 import { DateTime } from "luxon";
-import { reasons } from "components/forms/TimesheetForm";
+import { reasons } from "timesheets/forms/TimesheetForm";
+import { EntityType } from "store/types";
+import { Preset, Shift, ShiftValues, Timesheet } from "timesheets/types";
+import { Setting, Settings } from "settings/types";
+import { User } from "users/types";
+import { CurrentUser } from "auth/types";
 
-const randomID = () => randomstring.generate();
+export const randomID = () => faker.random.uuid();
 
-const randomTimestamps = () => ({
+export const randomDateTime = () => DateTime.fromSeconds(random(100000));
+
+export const randomTimestamps = () => ({
   changed: DateTime.local().toISO(),
   created: DateTime.local().toISO(),
 });
 
-export const randomUser = (partialUser?: Partial<User>): User =>
-  defaults(partialUser, {
+export const randomCurrentUser = (
+  partialCurrentUser?: Partial<CurrentUser>
+): CurrentUser =>
+  defaults(partialCurrentUser, {
     id: randomID(),
     ...randomTimestamps(),
     name: faker.name.findName(),
@@ -24,10 +33,30 @@ export const randomUser = (partialUser?: Partial<User>): User =>
     defaultShiftValues: range(7).map((index) => randomShiftValues()),
   });
 
+export const randomUser = (partialUser?: Partial<User>): User =>
+  defaults(partialUser, {
+    id: randomID(),
+    ...randomTimestamps(),
+    attributes: {
+      name: faker.name.findName(),
+      email: faker.internet.email(),
+      phoneNumber: faker.phone.phoneNumber("04## ### ###"),
+      acceptsReminders: true,
+      isAdmin: false,
+      defaultShiftValues: range(7).map((index) => randomShiftValues()),
+    },
+    relationships: {
+      timesheets: [],
+      presets: [],
+    },
+  });
+
 export const randomUsers = (count: number) =>
   range(count).map(() => randomUser());
 
-export const randomPassword = () => randomstring.generate();
+export const randomPassword = () => Randomstring.generate();
+
+export const randomToken = () => Randomstring.generate();
 
 export const randomBoolean = () => Math.random() > 0.5;
 
@@ -99,40 +128,45 @@ export const randomShiftDates = (datetime: DateTime) => {
   return [start, end];
 };
 
-export const randomShift = (dateTime: DateTime): Shift => {
+export const randomShift = (
+  timesheet: Timesheet,
+  dateTime: DateTime
+): Shift => {
   const [start, end] = randomShiftDates(dateTime);
   return {
     id: randomID(),
     ...randomTimestamps(),
-    start: start.toISO(),
-    end: end.toISO(),
-    breakDuration: randomMinutes(30, 60),
+    attributes: {
+      start: start.toISO(),
+      end: end.toISO(),
+      breakDuration: randomMinutes(30, 60),
+    },
+    relationships: {
+      timesheet: timesheet.id,
+    },
   };
 };
 
 export const randomTimesheet = (
-  user: User,
+  user: User | CurrentUser,
   partialTimesheet?: Partial<Timesheet>
 ): Timesheet => {
-  const weekStartDateTime =
-    DateTime.now().weekday === 1
-      ? DateTime.now().startOf("week").minus({ weeks: 1 })
-      : DateTime.now().startOf("week");
-
   return defaults(partialTimesheet, {
     id: randomID(),
     ...randomTimestamps(),
-    userID: user.id,
-    shifts: range(7).map(
-      (dateOffset): Shift =>
-        randomShift(weekStartDateTime.plus({ days: dateOffset }))
-    ),
-    absences: [],
-    comment: randomstring.generate(60),
+    attributes: {
+      comment: Randomstring.generate(60),
+      submitted: DateTime.local().toISO(),
+    },
+    relationships: {
+      user: user.id,
+      shifts: [],
+      absences: [],
+    },
   });
 };
 
-export const randomTimesheets = (user: User, count?: number) =>
+export const randomTimesheets = (user: User | CurrentUser, count?: number) =>
   range(count || 5).map(() => randomTimesheet(user));
 
 export const randomSettings = (
@@ -143,8 +177,11 @@ export const randomSettings = (
   {
     id: randomID(),
     ...randomTimestamps(),
-    name: "timesheetRecipients",
-    value: settings?.timesheetRecipients || faker.internet.email(),
+    attributes: {
+      name: "timesheetRecipients",
+      value: settings?.timesheetRecipients || faker.internet.email(),
+    },
+    relationships: {},
   },
 ];
 
@@ -157,9 +194,15 @@ export const randomPreset = (
   partialPreset?: Partial<Preset>
 ): Preset =>
   defaults(partialPreset, {
-    userID: user.id,
-    value: range(7).map((index) => randomShiftValues()),
-  }) as Preset;
+    id: randomID(),
+    ...randomTimestamps(),
+    attributes: {
+      value: range(7).map((index) => randomShiftValues()),
+    },
+    relationships: {
+      user: user.id,
+    },
+  });
 
 export const randomPresets = (user: User, count?: number) =>
   range(count || 5).map(() => randomPreset(user));

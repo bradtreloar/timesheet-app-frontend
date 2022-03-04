@@ -1,205 +1,95 @@
-import { omit } from "lodash";
+import { EntityRelationships } from "store/entity";
+import { EntityType } from "store/types";
 import {
-  Absence,
-  AbsenceAttributes,
-  Preset,
-  Setting,
-  Shift,
-  ShiftAttributes,
-  ShiftValues,
-  Timesheet,
-  TimesheetAttributes,
-  User,
-  UserAttributes,
-} from "store/types";
-import { Time, getShiftHoursFromTimes } from "utils/date";
-import {
-  AbsenceResource,
-  NewAbsenceResource,
-  NewShiftResource,
-  NewTimesheetResource,
-  NewUserResource,
-  PresetResource,
-  SettingResource,
-  ShiftResource,
-  TimesheetResource,
-  UserResource,
+  EntityRelatedResources,
+  EntityResource,
+  RelatedResource,
 } from "./types";
 
-export const parseSetting = (resource: SettingResource): Setting => ({
-  id: resource.id,
-  ...resource.attributes,
-});
-
-export const parseAbsence = (resource: AbsenceResource): Absence => ({
-  id: resource.id,
-  ...resource.attributes,
-});
-
-export const parseShift = (resource: ShiftResource): Shift => ({
-  id: resource.id,
-  ...resource.attributes,
-});
-
-export const parseTimesheet = (resource: TimesheetResource): Timesheet => ({
-  id: resource.id,
-  userID: resource.relationships.user.data.id,
-  shifts: [],
-  absences: [],
-  ...resource.attributes,
-});
-
-export const parseUser = (resource: UserResource): User => ({
-  id: resource.id,
-  ...resource.attributes,
-});
-
-export const parsePreset = (resource: PresetResource): Preset => ({
-  id: resource.id,
-  userID: resource.relationships.user.data.id,
-  ...resource.attributes,
-});
-
-export const makeSettingResource = (setting: Setting): SettingResource => {
-  const resource: SettingResource = {
-    id: setting.id,
-    type: "settings",
-    attributes: omit(setting, ["id"]),
-    relationships: {},
-  };
-  return resource;
-};
-
-export const makeNewShiftResource = (
-  shiftAttributes: ShiftAttributes,
-  timesheet: Timesheet
-): NewShiftResource => ({
-  type: "shifts",
-  attributes: shiftAttributes,
-});
-
-export const makeShiftResource = (
-  shift: Shift,
-  timesheet: Timesheet
-): ShiftResource => ({
-  id: shift.id,
-  type: "shifts",
-  attributes: omit(shift, ["id"]),
-  relationships: {
-    timesheet: {
-      data: {
-        id: timesheet.id,
-        type: "timesheets",
-      },
-    },
-  },
-});
-
-export const makeNewAbsenceResource = (
-  shiftAttributes: AbsenceAttributes,
-  timesheet: Timesheet
-): NewAbsenceResource => ({
-  type: "absences",
-  attributes: shiftAttributes,
-});
-
-export const makeAbsenceResource = (
-  absence: Absence,
-  timesheet: Timesheet
-): AbsenceResource => ({
-  id: absence.id,
-  type: "absences",
-  attributes: omit(absence, ["id"]),
-  relationships: {
-    timesheet: {
-      data: {
-        id: timesheet.id,
-        type: "timesheets",
-      },
-    },
-  },
-});
-
-export const makeNewTimesheetResource = (
-  timesheetAttributes: TimesheetAttributes,
-  user: User
-): NewTimesheetResource => ({
-  type: "timesheets",
-  attributes: timesheetAttributes,
-});
-
-export const makeTimesheetResource = (
-  timesheet: Timesheet
-): TimesheetResource => ({
-  id: timesheet.id,
-  type: "timesheets",
-  attributes: omit(timesheet, ["id", "userID"]),
-  relationships: {
-    user: {
-      data: {
-        id: timesheet.userID,
-        type: "users",
-      },
-    },
-  },
-});
-
-export const makeNewUserResource = (
-  userAttributes: UserAttributes
-): NewUserResource => ({
-  type: "users",
-  attributes: userAttributes,
-});
-
-export const makeUserResource = (user: User): UserResource => ({
-  id: user.id,
-  type: "users",
-  attributes: omit(user, ["id"]),
-  relationships: {},
-});
-
-export const getShiftFromTimes = (
-  date: Date,
-  shiftValues: ShiftValues
-): ShiftAttributes => {
-  if (shiftValues === null) {
-    throw new Error(`No shift times.`);
-  }
-
-  const { startTime, endTime, breakDuration } = shiftValues;
-  const shiftDuration = getShiftHoursFromTimes(shiftValues);
-
-  if (shiftDuration === null || shiftDuration <= 0) {
-    throw new Error(`Invalid shift times.`);
-  }
+export const parseEntity = <T extends string, A>(
+  type: T,
+  getAttributes: (a: any) => A,
+  relationships: EntityRelationships,
+  resource: EntityResource<T, A>
+) => {
+  const { attributes } = resource;
+  const { changed, created } = attributes;
 
   return {
-    start: Time.fromObject(startTime).toDateTime(date).toISO(),
-    end: Time.fromObject(endTime).toDateTime(date).toISO(),
-    breakDuration: Time.fromObject(breakDuration).toMinutes(),
+    id: resource.id,
+    created,
+    changed,
+    attributes: getAttributes(attributes),
+    relationships: parseRelatedEntities(relationships, resource),
   };
 };
 
-export const getTimesFromShift = (shift: Shift): ShiftValues => {
-  const start = new Date(shift.start);
-  const end = new Date(shift.end);
-  const breakHours = Math.floor(shift.breakDuration / 60);
-  const breakMinutes = shift.breakDuration % 60;
+export const parseRelatedEntities = <T extends string, A>(
+  relationships: EntityRelationships,
+  resource: EntityResource<T, A>
+) => {
+  const { belongsTo, hasMany } = relationships;
+  const keys = {} as Record<string, string | string[]>;
+  if (belongsTo !== undefined) {
+    const { foreignKey } = belongsTo;
+    keys[foreignKey] = (resource.relationships[foreignKey]
+      .data as RelatedResource).id;
+  }
+  if (hasMany !== undefined) {
+    for (let { foreignKey } of hasMany) {
+      const data = resource.relationships[foreignKey].data as RelatedResource[];
+      keys[foreignKey] = data.map(({ id }) => id);
+    }
+  }
+  return keys;
+};
 
+export const makeEntityResource = <T extends string, A>(
+  type: T,
+  relationships: EntityRelationships,
+  entity: EntityType<A>
+): EntityResource<T, A> => {
   return {
-    isActive: true,
-    reason: "none",
-    startTime: {
-      hour: start.getHours().toString(),
-      minute: start.getMinutes().toString(),
+    id: entity.id,
+    type: type,
+    attributes: {
+      created: entity.created,
+      changed: entity.changed,
+      ...entity.attributes,
     },
-    endTime: {
-      hour: end.getHours().toString(),
-      minute: end.getMinutes().toString(),
-    },
-    breakDuration: {
-      hour: breakHours.toString(),
-      minute: breakMinutes.toString(),
-    },
+    relationships: makeRelatedEntityResources(relationships, entity),
   };
 };
+
+export const makeRelatedEntityResources = <A>(
+  relationships: EntityRelationships,
+  entity: EntityType<A>
+) => {
+  const { belongsTo, hasMany } = relationships;
+  const related = {} as EntityRelatedResources;
+  if (belongsTo !== undefined) {
+    const { type, foreignKey } = belongsTo;
+    related[foreignKey] = {
+      data: {
+        type,
+        id: entity.relationships[foreignKey] as string,
+      },
+    };
+  }
+  if (hasMany !== undefined) {
+    for (let { type, foreignKey } of hasMany) {
+      related[foreignKey] = {
+        data: (entity.relationships[foreignKey] as string[]).map((id) => ({
+          type,
+          id,
+        })),
+      };
+    }
+  }
+  return related;
+};
+
+export const makeNewEntityResource = <T, A>(type: T, entityAttributes: A) => ({
+  type,
+  attributes: entityAttributes,
+});

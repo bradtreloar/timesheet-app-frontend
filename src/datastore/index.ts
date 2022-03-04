@@ -1,94 +1,111 @@
-import axios, { AxiosResponse } from "axios";
-import { API_HOST } from "settings";
+import { AxiosResponse } from "axios";
 import {
-  parseTimesheet,
-  parseShift,
-  makeShiftResource,
-  parseSetting,
-  makeSettingResource,
-  parseUser,
-  makeUserResource,
-  makeAbsenceResource,
-  parseAbsence,
-  makeNewTimesheetResource,
-  makeNewShiftResource,
-  makeNewAbsenceResource,
-  makeNewUserResource,
-  parsePreset,
+  parseEntity,
+  makeNewEntityResource,
+  makeEntityResource,
 } from "./adapters";
-import { orderBy } from "lodash";
-import {
-  AbsenceResource,
-  NewTimesheetResource,
-  NewUserResource,
-  PresetResource,
-  SettingResource,
-  ShiftResource,
-  TimesheetResource,
-  UserResource,
-} from "./types";
-import {
-  Absence,
-  AbsenceAttributes,
-  Preset,
-  Setting,
-  Shift,
-  ShiftAttributes,
-  Timesheet,
-  TimesheetAttributes,
-  User,
-  UserAttributes,
-} from "store/types";
+import { EntityResource, Filters, UserResource } from "./types";
+import { client, jsonAPIClient } from "datastore/clients";
+import { EntityAttributesGetter, EntityType } from "store/types";
+import { EntityRelationships } from "store/entity";
+import assert from "assert";
+import { omit } from "lodash";
+import { CurrentUser } from "auth/types";
 
-export const client = axios.create({
-  baseURL: `${API_HOST}`,
-  withCredentials: true,
-  headers: {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  },
-});
+export class UnknownError extends Error {
+  constructor() {
+    super("Unknown error has occurred");
+  }
+}
 
-export const jsonAPIClient = axios.create({
-  baseURL: `${API_HOST}`,
-  withCredentials: true,
-  headers: {
-    Accept: "application/vnd.api+json",
-    "Content-Type": "application/vnd.api+json",
-  },
-});
+export class InvalidLoginException extends Error {
+  constructor() {
+    super("Invalid username or password");
+  }
+}
+
+export class InvalidPasswordException extends Error {
+  constructor() {
+    super("Invalid password");
+  }
+}
+
+export class UnauthorizedForgotPasswordException extends Error {
+  constructor() {
+    super("Unauthorized forgot-password attempt");
+  }
+}
+
+export class UnauthorizedLogoutException extends Error {
+  constructor() {
+    super("Unauthorized logout attempt");
+  }
+}
+
+export class UnauthorizedResetPasswordException extends Error {
+  constructor() {
+    super("Unauthorized password reset attempt");
+  }
+}
+
+export const getCSRFCookie = () => client.get("/csrf-cookie");
 
 export const login = async (
   email: string,
   password: string,
   remember: boolean
-): Promise<User> => {
-  await client.get("/csrf-cookie");
-  const response: AxiosResponse<User> = await client.post("/login", {
-    email,
-    password,
-    remember,
-  });
-  return response.data;
+): Promise<CurrentUser> => {
+  await getCSRFCookie();
+  try {
+    const response: AxiosResponse<CurrentUser> = await client.post("/login", {
+      email,
+      password,
+      remember,
+    });
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 422) {
+      throw new InvalidLoginException();
+    }
+  }
+  throw new UnknownError();
 };
 
 export const logout = async () => {
-  await client.get("/csrf-cookie");
-  await client.post("/logout");
+  await getCSRFCookie();
+  try {
+    await client.post("/logout");
+  } catch (error: any) {
+    if (error.response.status === 403) {
+      throw new UnauthorizedLogoutException();
+    }
+  }
 };
 
 export const forgotPassword = async (email: string) => {
-  await client.get("/csrf-cookie");
-  await client.post("/forgot-password", {
-    email,
-  });
+  await getCSRFCookie();
+  try {
+    await client.post("/forgot-password", {
+      email,
+    });
+  } catch (error: any) {
+    if (error.response.status === 403) {
+      throw new UnauthorizedForgotPasswordException();
+    }
+  }
 };
 
 export const setPassword = async (password: string) => {
-  await client.get("/csrf-cookie");
-  await client.post("/set-password", {
-    password,
-  });
+  await getCSRFCookie();
+  try {
+    await client.post("/set-password", {
+      password,
+    });
+  } catch (error: any) {
+    if (error.response?.status === 422) {
+      throw new InvalidPasswordException();
+    }
+  }
 };
 
 export const resetPassword = async (
@@ -96,16 +113,22 @@ export const resetPassword = async (
   token: string,
   password: string
 ) => {
-  await client.get("/csrf-cookie");
-  await client.post("/reset-password", {
-    email,
-    token,
-    password,
-  });
+  await getCSRFCookie();
+  try {
+    await client.post("/reset-password", {
+      email,
+      token,
+      password,
+    });
+  } catch (error: any) {
+    if (error.response?.status === 403) {
+      throw new UnauthorizedResetPasswordException();
+    }
+  }
 };
 
-export const fetchCurrentUser = async (): Promise<User | null> => {
-  const response: AxiosResponse<User> = await client.get(`/user`);
+export const fetchCurrentUser = async (): Promise<CurrentUser | null> => {
+  const response: AxiosResponse<CurrentUser> = await client.get(`/user`);
   if (response.status === 204) {
     // No current user.
     return null;
@@ -113,222 +136,121 @@ export const fetchCurrentUser = async (): Promise<User | null> => {
   return response.data;
 };
 
-export const fetchUsers = async (): Promise<User[]> => {
-  const response: AxiosResponse<{
-    data: UserResource[];
-  }> = await jsonAPIClient.get(`users`);
-  const { data } = response.data;
-  return data.map((resource: UserResource) => {
-    return parseUser(resource);
-  });
-};
-
-export const createUser = async (
-  userAttributes: UserAttributes
-): Promise<User> => {
-  await client.get("/csrf-cookie");
-  const userResource: NewUserResource = makeNewUserResource(userAttributes);
-  const response: AxiosResponse<{
-    data: UserResource;
-  }> = await jsonAPIClient.post(`/users`, {
-    data: userResource,
-  });
-  const { data } = response.data;
-  return parseUser(data);
-};
-
-export const updateUser = async (user: User): Promise<User> => {
-  await client.get("/csrf-cookie");
-  const userResource: UserResource = makeUserResource(user);
+export const updateUser = async (user: CurrentUser): Promise<CurrentUser> => {
+  await getCSRFCookie();
   const response: AxiosResponse<{
     data: UserResource;
   }> = await jsonAPIClient.patch(`/users/${user.id}`, {
-    data: userResource,
-  });
-  const { data } = response.data;
-  return parseUser(data);
-};
-
-export const deleteUser = async (user: User): Promise<User> => {
-  await client.get("/csrf-cookie");
-  await jsonAPIClient.delete(`/users/${user.id}`);
-  return user;
-};
-
-export const fetchTimesheets = async (user: User): Promise<Timesheet[]> => {
-  const response: AxiosResponse<{
-    data: TimesheetResource[];
-    included?: (ShiftResource | AbsenceResource)[];
-  }> = await jsonAPIClient.get(`users/${user.id}/timesheets`, {
-    params: {
-      include: "shifts,absences",
-      sort: "-created-at",
-    },
-  });
-  const { data, included } = response.data;
-
-  const shiftResources =
-    included !== undefined
-      ? (included.filter(({ type }) => type === "shifts") as ShiftResource[])
-      : [];
-
-  const absenceResources =
-    included !== undefined
-      ? (included.filter(
-          ({ type }) => type === "absences"
-        ) as AbsenceResource[])
-      : [];
-
-  const allShifts = shiftResources.map((shiftResource) =>
-    parseShift(shiftResource)
-  );
-  const allAbsences = absenceResources.map((absenceResource) =>
-    parseAbsence(absenceResource)
-  );
-
-  const timesheets = data.map((resource: TimesheetResource) => {
-    const timesheet = parseTimesheet(resource);
-    const relatedShiftResources = resource.relationships.shifts;
-    const relatedAbsenceResources = resource.relationships.absences;
-    if (relatedShiftResources !== undefined) {
-      const shiftIds = relatedShiftResources.data.map(({ id }) => id);
-      const shifts = orderBy(
-        allShifts.filter(({ id }) => shiftIds.includes(id as string)),
-        "start",
-        "asc"
-      );
-      timesheet.shifts = shifts;
-    }
-    if (relatedAbsenceResources !== undefined) {
-      const absenceIds = relatedAbsenceResources.data.map(({ id }) => id);
-      const absences = orderBy(
-        allAbsences.filter(({ id }) => absenceIds.includes(id as string)),
-        "date",
-        "asc"
-      );
-      timesheet.absences = absences;
-    }
-    return timesheet;
-  });
-
-  return timesheets;
-};
-
-export const createShift = async (
-  shiftAttributes: ShiftAttributes,
-  timesheet: Timesheet
-): Promise<Shift> => {
-  await client.get("/csrf-cookie");
-  const shiftResource = makeNewShiftResource(shiftAttributes, timesheet);
-  const response: AxiosResponse<{
-    data: ShiftResource;
-  }> = await jsonAPIClient.post(`/shifts`, {
-    data: shiftResource,
-  });
-  const { data } = response.data;
-  return parseShift(data);
-};
-
-export const createAbsence = async (
-  absenceAttributes: AbsenceAttributes,
-  timesheet: Timesheet
-): Promise<Absence> => {
-  await client.get("/csrf-cookie");
-  const absenceResource = makeNewAbsenceResource(absenceAttributes, timesheet);
-  const response: AxiosResponse<{
-    data: AbsenceResource;
-  }> = await jsonAPIClient.post(`/absences`, {
-    data: absenceResource,
-  });
-  const { data } = response.data;
-  return parseAbsence(data);
-};
-
-export const createTimesheet = async (
-  timesheetAttributes: TimesheetAttributes,
-  user: User
-): Promise<Timesheet> => {
-  await client.get("/csrf-cookie");
-  const timesheetResource: NewTimesheetResource = makeNewTimesheetResource(
-    timesheetAttributes,
-    user
-  );
-  const response: AxiosResponse<{
-    data: TimesheetResource;
-  }> = await jsonAPIClient.post(`/timesheets`, {
-    data: timesheetResource,
-  });
-  const { data } = response.data;
-  return parseTimesheet(data);
-};
-
-export const deleteTimesheet = async (
-  timesheet: Timesheet
-): Promise<Timesheet> => {
-  await client.get("/csrf-cookie");
-  await jsonAPIClient.delete(`/timesheets`);
-  return timesheet;
-};
-
-export const fetchSettings = async (): Promise<Setting[]> => {
-  const response: AxiosResponse<{
-    data: SettingResource[];
-  }> = await jsonAPIClient.get(`settings`);
-  const { data } = response.data;
-  return data.map((resource: SettingResource) => {
-    const { id } = resource;
-    const { name, value, changed, created } = resource.attributes;
-    return { id, name, value, changed, created };
-  });
-};
-
-export const fetchUnrestrictedSettings = async (): Promise<Setting[]> => {
-  const response: AxiosResponse<{
-    data: SettingResource[];
-  }> = await jsonAPIClient.get(`settings`, {
-    params: {
-      "filter[is_restricted]": 0,
+    data: {
+      id: user.id,
+      type: "users",
+      attributes: omit(user, ["id"]),
     },
   });
   const { data } = response.data;
-  return data.map((resource: SettingResource) => {
-    const { id } = resource;
-    const { name, value, changed, created } = resource.attributes;
-    return { id, name, value, changed, created };
-  });
+  return {
+    id: data.id,
+    ...data.attributes,
+  };
 };
 
-export const completeTimesheet = async (
-  timesheet: Timesheet
-): Promise<Timesheet> => {
-  await client.get("/csrf-cookie");
-  await client.post(`/timesheets/${timesheet.id}/complete`);
-  return timesheet;
-};
-
-export const updateSettings = async (
-  settings: Setting[]
-): Promise<Setting[]> => {
-  return await Promise.all(
-    settings.map(async (setting) => {
-      await client.get("/csrf-cookie");
-      const response: AxiosResponse<{
-        data: SettingResource;
-      }> = await jsonAPIClient.patch(`settings/${setting.id}`, {
-        data: makeSettingResource(setting),
-      });
-      const { data } = response.data;
-      return parseSetting(data);
-    })
-  );
-};
-
-export const fetchPresets = async (user: User): Promise<Preset[]> => {
+export const fetchEntities = async <T extends string, A>(
+  type: T,
+  attributesGetter: EntityAttributesGetter<A>,
+  relationships: EntityRelationships,
+  filters?: Filters
+): Promise<EntityType<A>[]> => {
+  const params = {} as Record<string, string>;
+  if (filters?.changedAfter) {
+    params["filter[updated-after]"] = filters?.changedAfter;
+  }
   const response: AxiosResponse<{
-    data: PresetResource[];
-  }> = await jsonAPIClient.get(`users/${user.id}/presets`);
-  const { data } = response.data;
-  return data.map((resource: PresetResource) => {
-    return parsePreset(resource);
+    data: EntityResource<T, A>[];
+  }> = await jsonAPIClient.get(`/${type}`, {
+    params,
   });
+  const { data } = response.data;
+  return data.map((resource) => {
+    return parseEntity(type, attributesGetter, relationships, resource);
+  });
+};
+
+export const fetchEntitiesBelongingTo = async <T extends string, A>(
+  type: T,
+  attributesGetter: EntityAttributesGetter<A>,
+  relationships: EntityRelationships,
+  belongsToID: string
+): Promise<EntityType<A>[]> => {
+  const { belongsTo } = relationships;
+  assert(belongsTo !== undefined);
+  const response: AxiosResponse<{
+    data: EntityResource<T, A>[];
+  }> = await jsonAPIClient.get(`/${belongsTo.type}/${belongsToID}/${type}`);
+  const { data } = response.data;
+  return data.map((resource) => {
+    return parseEntity(type, attributesGetter, relationships, resource);
+  });
+};
+
+export const createEntity = async <T extends string, B, A>(
+  type: T,
+  attributesGetter: EntityAttributesGetter<A>,
+  relationships: EntityRelationships,
+  attributes: A
+): Promise<EntityType<A>> => {
+  await getCSRFCookie();
+  const resource = makeNewEntityResource(type, attributes);
+  const response: AxiosResponse<{
+    data: EntityResource<T, A>;
+  }> = await jsonAPIClient.post(`/${type}`, {
+    data: resource,
+  });
+  const { data } = response.data;
+  return parseEntity(type, attributesGetter, relationships, data);
+};
+
+export const createEntityBelongingTo = async <T extends string, A>(
+  type: T,
+  attributesGetter: EntityAttributesGetter<A>,
+  relationships: EntityRelationships,
+  belongsToID: string,
+  attributes: A
+): Promise<EntityType<A>> => {
+  const { belongsTo } = relationships;
+  assert(belongsTo !== undefined);
+  await getCSRFCookie();
+  const resource = makeNewEntityResource(type, attributes);
+  const response: AxiosResponse<{
+    data: EntityResource<T, A>;
+  }> = await jsonAPIClient.post(`/${belongsTo.type}/${belongsToID}/${type}`, {
+    data: resource,
+  });
+  const { data } = response.data;
+  return parseEntity(type, attributesGetter, relationships, data);
+};
+
+export const updateEntity = async <T extends string, A>(
+  type: T,
+  attributesGetter: EntityAttributesGetter<A>,
+  relationships: EntityRelationships,
+  entity: EntityType<A>
+): Promise<EntityType<A>> => {
+  await getCSRFCookie();
+  const resource = makeEntityResource(type, relationships, entity);
+  const response: AxiosResponse<{
+    data: EntityResource<T, A>;
+  }> = await jsonAPIClient.patch(`/${type}/${entity.id}`, {
+    data: resource,
+  });
+  const { data } = response.data;
+  return parseEntity(type, attributesGetter, relationships, data);
+};
+
+export const deleteEntity = async <T extends string, A>(
+  type: T,
+  entity: EntityType<A>
+): Promise<EntityType<A>> => {
+  await getCSRFCookie();
+  await jsonAPIClient.delete(`/${type}/${entity.id}`);
+  return entity;
 };

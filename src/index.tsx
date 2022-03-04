@@ -3,11 +3,13 @@ import ReactDOM from "react-dom";
 import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 import * as serviceWorker from "./serviceWorker";
-import { AuthProvider } from "context/auth";
-import { MessagesProvider } from "context/messages";
-import App from "components/App";
-import store from "store";
+import { AuthProvider } from "auth/context";
+import { MessagesProvider } from "messages/context";
+import App from "App";
+import createStore from "store/createStore";
 import "./styles/common/bootstrap.scss";
+
+export const store = createStore();
 
 ReactDOM.render(
   <React.StrictMode>
