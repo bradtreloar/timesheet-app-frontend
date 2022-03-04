@@ -83,7 +83,7 @@ export const createEntitySlice = <
         extraReducers(builder);
       }
 
-      builder.addCase(asyncActions.fetch.fulfilled, (state, action) => {
+      builder.addCase(asyncActions.fetchAll.fulfilled, (state, action) => {
         const entities = action.payload;
         const allIDs = state.entities.allIDs;
         entities.forEach((entity) => {
@@ -94,9 +94,9 @@ export const createEntitySlice = <
         });
       });
 
-      if (asyncActions.fetchBelongingTo !== null) {
+      if (asyncActions.fetchAllBelongingTo !== null) {
         builder.addCase(
-          asyncActions.fetchBelongingTo.fulfilled,
+          asyncActions.fetchAllBelongingTo.fulfilled,
           (state, action) => {
             const entities = action.payload;
             const allIDs = state.entities.allIDs;
@@ -255,15 +255,15 @@ export const createAsyncEntityActions = <A, T extends string>(
   const belongsTo = relationships.belongsTo;
 
   return {
-    fetch: createAsyncThunk(
-      `${entityType}/fetch`,
+    fetchAll: createAsyncThunk(
+      `${entityType}/fetchAll`,
       async () =>
         await fetchEntities<T, A>(entityType, attributesGetter, relationships)
     ),
-    fetchBelongingTo:
+    fetchAllBelongingTo:
       belongsTo !== undefined
         ? createAsyncThunk(
-            `${entityType}/fetchBelongingTo`,
+            `${entityType}/fetchAllBelongingTo`,
             async (belongsToID: string) =>
               await fetchEntitiesBelongingTo<T, A>(
                 entityType,

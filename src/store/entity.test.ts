@@ -126,7 +126,7 @@ describe("synchronous actions", () => {
 
 describe("asynchronous thunk actions", () => {
   describe("fetch", () => {
-    test("creates fetch/fulfilled action when dispatched", async () => {
+    test("creates fetchAll/fulfilled action when dispatched", async () => {
       const {
         type,
         getAttributes,
@@ -142,20 +142,20 @@ describe("asynchronous thunk actions", () => {
       );
       jest.spyOn(datastore, "fetchEntities").mockResolvedValue([entity]);
 
-      const action = await store.dispatch(actions.fetch());
+      const action = await store.dispatch(actions.fetchAll());
 
       expect(datastore.fetchEntities).toHaveBeenCalledWith(
         type,
         getAttributes,
         relationships
       );
-      expect(action.type).toBe(`${type}/fetch/fulfilled`);
+      expect(action.type).toBe(`${type}/fetchAll/fulfilled`);
       expect(action.payload).toStrictEqual([entity]);
     });
   });
 
-  describe("fetchBelongingTo", () => {
-    test("creates fetchBelongingTo/fulfilled action when dispatched", async () => {
+  describe("fetchAllBelongingTo", () => {
+    test("creates fetchAllBelongingTo/fulfilled action when dispatched", async () => {
       const {
         type,
         getAttributes,
@@ -173,10 +173,10 @@ describe("asynchronous thunk actions", () => {
       jest
         .spyOn(datastore, "fetchEntitiesBelongingTo")
         .mockResolvedValue([entity]);
-      assert(actions.fetchBelongingTo !== null);
+      assert(actions.fetchAllBelongingTo !== null);
 
       const action = await store.dispatch(
-        actions.fetchBelongingTo(parentEntityID)
+        actions.fetchAllBelongingTo(parentEntityID)
       );
 
       expect(datastore.fetchEntitiesBelongingTo).toHaveBeenCalledWith(
@@ -185,7 +185,7 @@ describe("asynchronous thunk actions", () => {
         relationships,
         parentEntityID
       );
-      expect(action.type).toBe(`${type}/fetchBelongingTo/fulfilled`);
+      expect(action.type).toBe(`${type}/fetchAllBelongingTo/fulfilled`);
       expect(action.payload).toStrictEqual([entity]);
     });
   });
@@ -383,14 +383,14 @@ describe("reducer", () => {
     const entityState = buildEntityState(entities);
 
     store.dispatch({
-      type: `${type}/fetch/fulfilled`,
+      type: `${type}/fetchAll/fulfilled`,
       payload: entities,
     });
 
     expect(store.getState()[type]).toStrictEqual(entityState);
   });
 
-  test("populate store when fetchBelongingTo action is dispatched", () => {
+  test("populate store when fetchAllBelongingTo action is dispatched", () => {
     const {
       type,
       getAttributes,
@@ -403,7 +403,7 @@ describe("reducer", () => {
     const entityState = buildEntityState(entities);
 
     store.dispatch({
-      type: `${type}/fetchBelongingTo/fulfilled`,
+      type: `${type}/fetchAllBelongingTo/fulfilled`,
       payload: entities,
     });
 

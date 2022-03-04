@@ -28,11 +28,11 @@ import { CurrentUser } from "auth/types";
 
 const initialiseStore = async (user: CurrentUser) => {
   const dispatch = useThunkDispatch();
-  assert(timesheetActions.fetchBelongingTo !== null);
-  dispatch(timesheetActions.fetchBelongingTo(user.id));
-  dispatch(settingsActions.fetch());
+  assert(timesheetActions.fetchAllBelongingTo !== null);
+  dispatch(timesheetActions.fetchAllBelongingTo(user.id));
+  dispatch(settingsActions.fetchAll());
   if (user.isAdmin) {
-    dispatch(userActions.fetch());
+    dispatch(userActions.fetchAll());
   }
 };
 
