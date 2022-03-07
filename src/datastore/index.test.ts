@@ -93,9 +93,9 @@ describe("login", () => {
     const remember = true;
     mockClient.onPost("/login").reply(422);
 
-    expect(login(user.attributes.email, password, remember)).rejects.toThrow(
-      InvalidLoginException
-    );
+    await expect(
+      login(user.attributes.email, password, remember)
+    ).rejects.toThrow(InvalidLoginException);
   });
 });
 
@@ -131,7 +131,7 @@ describe("logout", () => {
   test("throws exception on invalid request", async () => {
     mockClient.onPost("/logout").reply(403);
 
-    expect(logout()).rejects.toThrow(UnauthorizedLogoutException);
+    await expect(logout()).rejects.toThrow(UnauthorizedLogoutException);
   });
 });
 
@@ -173,7 +173,7 @@ describe("forgotPassword", () => {
     const user = randomUser();
     mockClient.onPost("/forgot-password").reply(403);
 
-    expect(forgotPassword(user.attributes.email)).rejects.toThrow(
+    await expect(forgotPassword(user.attributes.email)).rejects.toThrow(
       UnauthorizedForgotPasswordException
     );
   });
@@ -217,7 +217,9 @@ describe("setPassword", () => {
     const password = randomPassword();
     mockClient.onPost("/set-password").reply(422);
 
-    expect(setPassword(password)).rejects.toThrow(InvalidPasswordException);
+    await expect(setPassword(password)).rejects.toThrow(
+      InvalidPasswordException
+    );
   });
 });
 
@@ -269,7 +271,7 @@ describe("resetPassword", () => {
     const token = randomToken();
     mockClient.onPost("/reset-password").reply(403);
 
-    expect(
+    await expect(
       resetPassword(user.attributes.email, password, token)
     ).rejects.toThrow(UnauthorizedResetPasswordException);
   });

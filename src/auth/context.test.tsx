@@ -75,7 +75,7 @@ describe("unauthenticated user", () => {
     await waitForNextUpdate();
     const state = await result.current;
 
-    expect(state.login(user.email, password, true)).rejects.toThrowError(
+    await expect(state.login(user.email, password, true)).rejects.toThrowError(
       "Unrecognised email or password."
     );
   });
