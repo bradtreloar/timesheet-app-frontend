@@ -4,7 +4,10 @@ import { Timesheet, TimesheetAttributes } from "timesheets/types";
 
 const timesheets = createEntitySlice(
   "timesheets",
-  ({ comment, submitted }: any): TimesheetAttributes => ({ comment, submitted }),
+  ({ comment, submitted }: any): TimesheetAttributes => ({
+    comment,
+    submitted,
+  }),
   {
     belongsTo: {
       type: "users",

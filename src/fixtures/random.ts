@@ -5,7 +5,13 @@ import { defaults, random, random as randomNumber, range } from "lodash";
 import { DateTime } from "luxon";
 import { reasons } from "timesheets/forms/TimesheetForm";
 import { EntityType } from "store/types";
-import { Preset, Shift, ShiftValues, Timesheet } from "timesheets/types";
+import {
+  Absence,
+  Preset,
+  Shift,
+  ShiftValues,
+  Timesheet,
+} from "timesheets/types";
 import { Setting, Settings } from "settings/types";
 import { User } from "users/types";
 import { CurrentUser } from "auth/types";
@@ -140,6 +146,23 @@ export const randomShift = (
       start: start.toISO(),
       end: end.toISO(),
       breakDuration: randomMinutes(30, 60),
+    },
+    relationships: {
+      timesheet: timesheet.id,
+    },
+  };
+};
+
+export const randomAbsence = (
+  timesheet: Timesheet,
+  dateTime: DateTime
+): Absence => {
+  return {
+    id: randomID(),
+    ...randomTimestamps(),
+    attributes: {
+      date: dateTime.toISO(),
+      reason: "rostered-day-off",
     },
     relationships: {
       timesheet: timesheet.id,
