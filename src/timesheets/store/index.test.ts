@@ -4,7 +4,7 @@ import {
   randomTimesheet,
   randomUser,
 } from "fixtures/random";
-import { buildEntityState } from "store/entity";
+import { buildEntityState, createAsyncEntityActions } from "store/entity";
 import { fetchTimesheetEntries } from ".";
 import { actions as timesheetActions } from "./timesheets";
 import { actions as shiftActions } from "./shifts";
@@ -17,9 +17,10 @@ import {
   Timesheet,
 } from "timesheets/types";
 import assert from "assert";
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { AsyncThunk, createAsyncThunk } from "@reduxjs/toolkit";
 import { EntityType } from "store/types";
 import { DateTime } from "luxon";
+import { EntryActions } from "./types";
 
 const seedStore = (timesheets: Timesheet[]) => {
   const store = createStore();
@@ -42,16 +43,20 @@ describe("fetchTimesheetEntries", () => {
     const timesheet = randomTimesheet(user);
     const shift = randomShift(timesheet, DateTime.local());
     const store = seedStore([timesheet]);
-    // @ts-expect-error Jest thinks method may be null.
-    jest.spyOn(shiftActions, "fetchAllBelongingTo").mockImplementation(
-      // @ts-expect-error Jest wrongly expects HOF.
-      createMockAsyncThunk<ShiftAttributes>("shifts", [shift])
-    );
     jest
-      // @ts-expect-error Jest thinks method may be null.
-      .spyOn(absenceActions, "fetchAllBelongingTo")
+      .spyOn(
+        shiftActions as EntryActions<ShiftAttributes>,
+        "fetchAllBelongingTo"
+      )
       .mockImplementation(
-        // @ts-expect-error Jest wrongly expects HOF.
+        createMockAsyncThunk<ShiftAttributes>("shifts", [shift])
+      );
+    jest
+      .spyOn(
+        absenceActions as EntryActions<AbsenceAttributes>,
+        "fetchAllBelongingTo"
+      )
+      .mockImplementation(
         createMockAsyncThunk<AbsenceAttributes>("absences", [])
       );
 
@@ -69,15 +74,19 @@ describe("fetchTimesheetEntries", () => {
     const absence = randomAbsence(timesheet, DateTime.local());
     const store = seedStore([timesheet]);
     jest
-      // @ts-expect-error Jest thinks method may be null.
-      .spyOn(shiftActions, "fetchAllBelongingTo")
-      // @ts-expect-error Jest wrongly expects HOF.
+      .spyOn(
+        shiftActions as EntryActions<ShiftAttributes>,
+        "fetchAllBelongingTo"
+      )
       .mockImplementation(createMockAsyncThunk<ShiftAttributes>("shifts", []));
-    // @ts-expect-error Jest thinks method may be null.
-    jest.spyOn(absenceActions, "fetchAllBelongingTo").mockImplementation(
-      // @ts-expect-error Jest wrongly expects HOF.
-      createMockAsyncThunk<AbsenceAttributes>("absences", [absence])
-    );
+    jest
+      .spyOn(
+        absenceActions as EntryActions<AbsenceAttributes>,
+        "fetchAllBelongingTo"
+      )
+      .mockImplementation(
+        createMockAsyncThunk<AbsenceAttributes>("absences", [absence])
+      );
 
     await store.dispatch(fetchTimesheetEntries(timesheet));
 
