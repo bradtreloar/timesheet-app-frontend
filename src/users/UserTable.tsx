@@ -1,6 +1,5 @@
 import usePagination from "common/usePagination";
-import { orderBy } from "lodash";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { User, UserAttributes, UserSortOrder } from "users/types";
 import { useSortedUsers } from "./hooks";

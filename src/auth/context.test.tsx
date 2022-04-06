@@ -1,13 +1,10 @@
-import React, { useState } from "react";
-import { render, act } from "@testing-library/react";
+import React from "react";
+import { act } from "@testing-library/react";
 import { renderHook } from "@testing-library/react-hooks";
-import { screen } from "@testing-library/dom";
-import userEvent from "@testing-library/user-event";
 import { AuthProvider, useAuth } from "./context";
 import * as datastore from "datastore";
 import { randomPassword, randomCurrentUser } from "fixtures/random";
 import Randomstring from "randomstring";
-import { User } from "users/types";
 import { CurrentUser } from "./types";
 
 jest.mock("datastore");

@@ -1,6 +1,6 @@
 import { orderBy } from "lodash";
 import { useMemo } from "react";
-import { User, UserAttributes, UserSortOrder } from "./types";
+import { User, UserSortOrder } from "./types";
 
 export const useSortedUsers = (users: User[], sortOrder: UserSortOrder) =>
   useMemo(
