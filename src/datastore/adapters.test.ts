@@ -54,7 +54,7 @@ describe("parseEntity", () => {
       },
     };
 
-    const result = parseEntity(type, getAttributes, relationships, resource);
+    const result = parseEntity(getAttributes, relationships, resource);
 
     expect(result).toStrictEqual(entity);
   });

@@ -7,7 +7,6 @@ import {
 } from "./types";
 
 export const parseEntity = <T extends string, A>(
-  type: T,
   getAttributes: (a: any) => A,
   relationships: EntityRelationships,
   resource: EntityResource<T, A>
@@ -21,7 +20,7 @@ export const parseEntity = <T extends string, A>(
     changed,
     attributes: getAttributes(attributes),
     relationships: parseRelatedEntities(relationships, resource),
-  };
+  } as EntityType<A>;
 };
 
 export const parseRelatedEntities = <T extends string, A>(
