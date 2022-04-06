@@ -1,8 +1,13 @@
 import { createEntitySlice } from "store/entity";
 import { EntityState } from "store/types";
-import { Absence, AbsenceAttributes } from "timesheets/types";
+import {
+  Absence,
+  AbsenceAttributes,
+  EntryActions,
+  EntryKeys,
+} from "timesheets/types";
 
-const absences = createEntitySlice(
+const absences = createEntitySlice<"absences", AbsenceAttributes, EntryKeys>(
   "absences",
   ({ date, reason }: any): AbsenceAttributes => ({
     date,
@@ -20,5 +25,8 @@ const absences = createEntitySlice(
 export const selectAbsences = (state: { absences: EntityState<Absence> }) =>
   state.absences;
 
-export const { actions } = absences;
+export const actions = absences.actions as EntryActions<
+  typeof absences.actions,
+  AbsenceAttributes
+>;
 export default absences;

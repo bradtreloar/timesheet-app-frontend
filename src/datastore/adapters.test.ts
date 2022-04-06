@@ -1,8 +1,7 @@
 import { mockEntityType } from "fixtures/entity";
 import { randomID } from "fixtures/random";
 import Randomstring from "randomstring";
-import { EntityRelationship, EntityRelationships } from "store/entity";
-import { EntityType } from "store/types";
+import { EntityRelationship, EntityRelationships } from "store/types";
 import {
   makeEntityResource,
   makeNewEntityResource,
@@ -62,12 +61,7 @@ describe("parseEntity", () => {
 
 describe("parseRelatedEntities", () => {
   test("parses foreign keys from relationships", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
+    const { type, relationships } = mockEntityType();
     const belongsTo = relationships.belongsTo as EntityRelationship;
     const hasMany = (relationships.hasMany as EntityRelationship[])[0];
     const belongsToID = randomID();
@@ -109,12 +103,7 @@ describe("parseRelatedEntities", () => {
 
 describe("makeEntityResource", () => {
   test("converts Entity to EntityResource", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
+    const { type, relationships, randomEntity } = mockEntityType();
     const belongsTo = relationships.belongsTo as EntityRelationship;
     const hasMany = (relationships.hasMany as EntityRelationship[])[0];
     const entity = randomEntity();
@@ -155,7 +144,6 @@ describe("makeEntityResource", () => {
 
 describe("makeRelatedEntityResources", () => {
   test("builds related entities data from foreign keys", () => {
-    const type = Randomstring.generate();
     const belongsToKey = Randomstring.generate();
     const belongsToType = Randomstring.generate();
     const belongsToID = randomID();

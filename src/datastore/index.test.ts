@@ -1,9 +1,7 @@
 import { client, jsonAPIClient } from "datastore/clients";
 import MockAdapter from "axios-mock-adapter";
-import Randomstring from "randomstring";
 import {
   randomDateTime,
-  randomID,
   randomPassword,
   randomToken,
   randomUser,
@@ -29,7 +27,7 @@ import {
 } from "datastore";
 import { mockEntityType } from "fixtures/entity";
 import { makeEntityResource } from "./adapters";
-import { EntityRelationship } from "store/entity";
+import { EntityRelationship } from "store/types";
 
 const mockClient = new MockAdapter(client);
 const mockJsonAPIClient = new MockAdapter(jsonAPIClient);
@@ -480,12 +478,7 @@ describe("updateEntity", () => {
 
 describe("deleteEntity", () => {
   test("deletes an entity", async () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
+    const { type, relationships, randomEntity } = mockEntityType();
     const entity = randomEntity();
     const url = `/${type}/${entity.id}`;
     mockJsonAPIClient.onDelete(url).reply(200, {

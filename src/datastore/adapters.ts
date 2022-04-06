@@ -1,12 +1,20 @@
-import { EntityRelationships } from "store/entity";
-import { EntityType } from "store/types";
+import {
+  Entity,
+  EntityAttributes,
+  EntityKeys,
+  EntityRelationships,
+} from "store/types";
 import {
   EntityRelatedResources,
   EntityResource,
   RelatedResource,
 } from "./types";
 
-export const parseEntity = <T extends string, A>(
+export const parseEntity = <
+  T extends string,
+  A extends EntityAttributes,
+  K extends EntityKeys
+>(
   getAttributes: (a: any) => A,
   relationships: EntityRelationships,
   resource: EntityResource<T, A>
@@ -20,7 +28,7 @@ export const parseEntity = <T extends string, A>(
     changed,
     attributes: getAttributes(attributes),
     relationships: parseRelatedEntities(relationships, resource),
-  } as EntityType<A>;
+  } as Entity<A, K>;
 };
 
 export const parseRelatedEntities = <T extends string, A>(
@@ -43,10 +51,14 @@ export const parseRelatedEntities = <T extends string, A>(
   return keys;
 };
 
-export const makeEntityResource = <T extends string, A>(
+export const makeEntityResource = <
+  T extends string,
+  A extends EntityAttributes,
+  K extends EntityKeys
+>(
   type: T,
   relationships: EntityRelationships,
-  entity: EntityType<A>
+  entity: Entity<A, K>
 ): EntityResource<T, A> => {
   return {
     id: entity.id,
@@ -60,9 +72,12 @@ export const makeEntityResource = <T extends string, A>(
   };
 };
 
-export const makeRelatedEntityResources = <A>(
+export const makeRelatedEntityResources = <
+  A extends EntityAttributes,
+  K extends EntityKeys
+>(
   relationships: EntityRelationships,
-  entity: EntityType<A>
+  entity: Entity<A, K>
 ) => {
   const { belongsTo, hasMany } = relationships;
   const related = {} as EntityRelatedResources;

@@ -17,22 +17,14 @@ import {
 } from "datastore";
 import {
   Entity,
+  EntityAttributes,
   EntityAttributesGetter,
+  EntityBase,
+  EntityKeys,
+  EntityRelationships,
   EntityState,
   EntityStateData,
-  EntityType,
 } from "./types";
-
-export interface EntityRelationship {
-  type: string;
-  foreignKey: string;
-  backPopulates: string;
-}
-
-export type EntityRelationships = {
-  belongsTo?: EntityRelationship;
-  hasMany?: EntityRelationship[];
-};
 
 export const emptyEntityState = <T>() =>
   ({
@@ -43,25 +35,31 @@ export const emptyEntityState = <T>() =>
     status: "idle",
   } as EntityState<T>);
 
-export const buildEntityState = <T extends Entity>(entities: T[]) =>
+export const buildEntityState = <
+  A extends EntityAttributes,
+  K extends EntityKeys
+>(
+  entities: Entity<A, K>[]
+) =>
   entities.reduce((entityState, entity) => {
     entityState.entities.byID[entity.id] = entity;
     entityState.entities.allIDs.push(entity.id);
     return entityState;
-  }, emptyEntityState<T>());
+  }, emptyEntityState<Entity<A, K>>());
 
 export const createEntitySlice = <
   T extends string,
-  A extends Record<string, any>
+  A extends EntityAttributes,
+  K extends EntityKeys
 >(
   type: T,
   getAttributes: EntityAttributesGetter<A>,
   relationships: EntityRelationships,
   extraReducers?: (
-    builder: ActionReducerMapBuilder<EntityState<EntityType<A>>>
+    builder: ActionReducerMapBuilder<EntityState<Entity<A, K>>>
   ) => void
 ) => {
-  const asyncActions = createAsyncEntityActions<A, T>(
+  const asyncActions = createAsyncEntityActions<A, K, T>(
     type,
     getAttributes,
     relationships
@@ -69,12 +67,12 @@ export const createEntitySlice = <
 
   const slice = createSlice({
     name: type,
-    initialState: emptyEntityState<EntityType<A>>(),
+    initialState: emptyEntityState<Entity<A, K>>(),
     reducers: {
       clear() {
-        return emptyEntityState<EntityType<A>>();
+        return emptyEntityState<Entity<A, K>>();
       },
-      set(state, action: PayloadAction<EntityState<EntityType<A>>>) {
+      set(state, action: PayloadAction<EntityState<Entity<A, K>>>) {
         return action.payload;
       },
     },
@@ -90,7 +88,7 @@ export const createEntitySlice = <
           if (!allIDs.includes(entity.id)) {
             allIDs.push(entity.id);
           }
-          state.entities.byID[entity.id] = entity as Draft<EntityType<A>>;
+          state.entities.byID[entity.id] = entity as Draft<Entity<A, K>>;
         });
       });
 
@@ -104,7 +102,7 @@ export const createEntitySlice = <
               if (!allIDs.includes(entity.id)) {
                 allIDs.push(entity.id);
               }
-              state.entities.byID[entity.id] = entity as Draft<EntityType<A>>;
+              state.entities.byID[entity.id] = entity as Draft<Entity<A, K>>;
             });
           }
         );
@@ -112,7 +110,7 @@ export const createEntitySlice = <
 
       builder.addCase(asyncActions.add.fulfilled, (state, action) => {
         const entity = action.payload;
-        state.entities.byID[entity.id] = entity as Draft<EntityType<A>>;
+        state.entities.byID[entity.id] = entity as Draft<Entity<A, K>>;
         state.entities.allIDs.push(entity.id);
       });
 
@@ -121,7 +119,7 @@ export const createEntitySlice = <
           asyncActions.addBelongingTo.fulfilled,
           (state, action) => {
             const entity = action.payload;
-            state.entities.byID[entity.id] = entity as Draft<EntityType<A>>;
+            state.entities.byID[entity.id] = entity as Draft<Entity<A, K>>;
             state.entities.allIDs.push(entity.id);
           }
         );
@@ -129,7 +127,7 @@ export const createEntitySlice = <
 
       builder.addCase(asyncActions.update.fulfilled, (state, action) => {
         const entity = action.payload;
-        state.entities.byID[entity.id] = entity as Draft<EntityType<A>>;
+        state.entities.byID[entity.id] = entity as Draft<Entity<A, K>>;
       });
 
       builder.addCase(asyncActions.delete.fulfilled, (state, action) => {
@@ -143,10 +141,10 @@ export const createEntitySlice = <
         const { type: belongsToType, backPopulates } = relationships.belongsTo;
 
         builder.addCase(`${belongsToType}/clear`, (state) => {
-          return emptyEntityState<EntityType<A>>();
+          return emptyEntityState<Entity<A, K>>();
         });
 
-        builder.addCase<string, PayloadAction<Entity>>(
+        builder.addCase<string, PayloadAction<EntityBase>>(
           `${belongsToType}/delete/fulfilled`,
           (state, action) => {
             const ownerEntity = action.payload;
@@ -171,7 +169,7 @@ export const createEntitySlice = <
           foreignKey,
           backPopulates: backPopKey,
         } of relationships.hasMany) {
-          builder.addCase<string, PayloadAction<EntityState<Entity>>>(
+          builder.addCase<string, PayloadAction<EntityState<EntityBase>>>(
             `${hasManyType}/set`,
             (state, action) => {
               const owneeEntityState = action.payload;
@@ -190,16 +188,19 @@ export const createEntitySlice = <
             }
           );
 
-          builder.addCase<string, PayloadAction<EntityStateData<Entity>>>(
+          builder.addCase<string, PayloadAction<EntityStateData<EntityBase>>>(
             `${hasManyType}/clear`,
             (state, action) => {
               for (let id of state.entities.allIDs) {
-                state.entities.byID[id].relationships[foreignKey] = [];
+                const keys = state.entities.byID[id].relationships;
+                keys[
+                  foreignKey as keyof Draft<K>
+                ] = ([] as unknown) as Draft<K>[keyof Draft<K>];
               }
             }
           );
 
-          builder.addCase<string, PayloadAction<Entity>>(
+          builder.addCase<string, PayloadAction<EntityBase>>(
             `${hasManyType}/add/fulfilled`,
             (state, action) => {
               const owneeEntity = action.payload;
@@ -210,7 +211,7 @@ export const createEntitySlice = <
             }
           );
 
-          builder.addCase<string, PayloadAction<Entity>>(
+          builder.addCase<string, PayloadAction<EntityBase>>(
             `${hasManyType}/delete/fulfilled`,
             (state, action) => {
               const owneeEntity = action.payload;
@@ -219,9 +220,10 @@ export const createEntitySlice = <
               const owneeIDs = ownerEntity.relationships[
                 foreignKey
               ] as string[];
-              ownerEntity.relationships[foreignKey] = owneeIDs.filter(
+              const keys = ownerEntity.relationships;
+              keys[foreignKey as keyof Draft<K>] = owneeIDs.filter(
                 (id) => id !== owneeEntity.id
-              );
+              ) as Draft<K>[keyof Draft<K>];
             }
           );
         }
@@ -247,7 +249,11 @@ export const createEntitySlice = <
   };
 };
 
-export const createAsyncEntityActions = <A, T extends string>(
+export const createAsyncEntityActions = <
+  A extends EntityAttributes,
+  K extends EntityKeys,
+  T extends string
+>(
   entityType: T,
   attributesGetter: EntityAttributesGetter<A>,
   relationships: EntityRelationships
@@ -258,14 +264,18 @@ export const createAsyncEntityActions = <A, T extends string>(
     fetchAll: createAsyncThunk(
       `${entityType}/fetchAll`,
       async () =>
-        await fetchEntities<T, A>(entityType, attributesGetter, relationships)
+        await fetchEntities<T, A, K>(
+          entityType,
+          attributesGetter,
+          relationships
+        )
     ),
     fetchAllBelongingTo:
       belongsTo !== undefined
         ? createAsyncThunk(
             `${entityType}/fetchAllBelongingTo`,
             async (belongsToID: string) =>
-              await fetchEntitiesBelongingTo<T, A>(
+              await fetchEntitiesBelongingTo<T, A, K>(
                 entityType,
                 attributesGetter,
                 relationships,
@@ -294,7 +304,7 @@ export const createAsyncEntityActions = <A, T extends string>(
               attributes: A;
               belongsToID: string;
             }) =>
-              await createEntityBelongingTo<T, A>(
+              await createEntityBelongingTo<T, A, K>(
                 entityType,
                 attributesGetter,
                 relationships,
@@ -305,12 +315,12 @@ export const createAsyncEntityActions = <A, T extends string>(
         : null,
     update: createAsyncThunk(
       `${entityType}/update`,
-      async (entity: EntityType<A>) =>
+      async (entity: Entity<A, K>) =>
         await updateEntity(entityType, attributesGetter, relationships, entity)
     ),
     delete: createAsyncThunk(
       `${entityType}/delete`,
-      async (entity: EntityType<A>) => await deleteEntity(entityType, entity)
+      async (entity: Entity<A, K>) => await deleteEntity(entityType, entity)
     ),
   };
 };

@@ -6,11 +6,16 @@ import {
 } from "./adapters";
 import { EntityResource, Filters, UserResource } from "./types";
 import { client, jsonAPIClient } from "datastore/clients";
-import { EntityAttributesGetter, EntityType } from "store/types";
-import { EntityRelationships } from "store/entity";
 import assert from "assert";
 import { omit } from "lodash";
 import { CurrentUser } from "auth/types";
+import {
+  Entity,
+  EntityAttributes,
+  EntityAttributesGetter,
+  EntityKeys,
+  EntityRelationships,
+} from "store/types";
 
 export class UnknownError extends Error {
   constructor() {
@@ -154,12 +159,16 @@ export const updateUser = async (user: CurrentUser): Promise<CurrentUser> => {
   };
 };
 
-export const fetchEntities = async <T extends string, A>(
+export const fetchEntities = async <
+  T extends string,
+  A extends EntityAttributes,
+  K extends EntityKeys
+>(
   type: T,
   attributesGetter: EntityAttributesGetter<A>,
   relationships: EntityRelationships,
   filters?: Filters
-): Promise<EntityType<A>[]> => {
+): Promise<Entity<A, K>[]> => {
   const params = {} as Record<string, string>;
   if (filters?.changedAfter) {
     params["filter[updated-after]"] = filters?.changedAfter;
@@ -175,12 +184,16 @@ export const fetchEntities = async <T extends string, A>(
   });
 };
 
-export const fetchEntitiesBelongingTo = async <T extends string, A>(
+export const fetchEntitiesBelongingTo = async <
+  T extends string,
+  A extends EntityAttributes,
+  K extends EntityKeys
+>(
   type: T,
   attributesGetter: EntityAttributesGetter<A>,
   relationships: EntityRelationships,
   belongsToID: string
-): Promise<EntityType<A>[]> => {
+): Promise<Entity<A, K>[]> => {
   const { belongsTo } = relationships;
   assert(belongsTo !== undefined);
   const response: AxiosResponse<{
@@ -192,12 +205,16 @@ export const fetchEntitiesBelongingTo = async <T extends string, A>(
   });
 };
 
-export const createEntity = async <T extends string, B, A>(
+export const createEntity = async <
+  T extends string,
+  A extends EntityAttributes,
+  K extends EntityKeys
+>(
   type: T,
   attributesGetter: EntityAttributesGetter<A>,
   relationships: EntityRelationships,
   attributes: A
-): Promise<EntityType<A>> => {
+): Promise<Entity<A, K>> => {
   await getCSRFCookie();
   const resource = makeNewEntityResource(type, attributes);
   const response: AxiosResponse<{
@@ -209,13 +226,17 @@ export const createEntity = async <T extends string, B, A>(
   return parseEntity(attributesGetter, relationships, data);
 };
 
-export const createEntityBelongingTo = async <T extends string, A>(
+export const createEntityBelongingTo = async <
+  T extends string,
+  A extends EntityAttributes,
+  K extends EntityKeys
+>(
   type: T,
   attributesGetter: EntityAttributesGetter<A>,
   relationships: EntityRelationships,
   belongsToID: string,
   attributes: A
-): Promise<EntityType<A>> => {
+): Promise<Entity<A, K>> => {
   const { belongsTo } = relationships;
   assert(belongsTo !== undefined);
   await getCSRFCookie();
@@ -229,12 +250,16 @@ export const createEntityBelongingTo = async <T extends string, A>(
   return parseEntity(attributesGetter, relationships, data);
 };
 
-export const updateEntity = async <T extends string, A>(
+export const updateEntity = async <
+  T extends string,
+  A extends EntityAttributes,
+  K extends EntityKeys
+>(
   type: T,
   attributesGetter: EntityAttributesGetter<A>,
   relationships: EntityRelationships,
-  entity: EntityType<A>
-): Promise<EntityType<A>> => {
+  entity: Entity<A, K>
+): Promise<Entity<A, K>> => {
   await getCSRFCookie();
   const resource = makeEntityResource(type, relationships, entity);
   const response: AxiosResponse<{
@@ -246,10 +271,14 @@ export const updateEntity = async <T extends string, A>(
   return parseEntity(attributesGetter, relationships, data);
 };
 
-export const deleteEntity = async <T extends string, A>(
+export const deleteEntity = async <
+  T extends string,
+  A extends EntityAttributes,
+  K extends EntityKeys
+>(
   type: T,
-  entity: EntityType<A>
-): Promise<EntityType<A>> => {
+  entity: Entity<A, K>
+): Promise<Entity<A, K>> => {
   await getCSRFCookie();
   await jsonAPIClient.delete(`/${type}/${entity.id}`);
   return entity;

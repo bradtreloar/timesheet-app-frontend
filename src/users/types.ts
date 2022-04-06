@@ -1,4 +1,4 @@
-import { EntityType } from "store/types";
+import { Entity, EntityAttributes, EntityKeys } from "store/types";
 import { ShiftValues } from "timesheets/types";
 
 export interface UserSortOrder {
@@ -6,7 +6,7 @@ export interface UserSortOrder {
   ascending: boolean;
 }
 
-export interface UserAttributes {
+export interface UserAttributes extends EntityAttributes {
   name: string;
   email: string;
   phoneNumber: string;
@@ -15,11 +15,9 @@ export interface UserAttributes {
   defaultShiftValues: ShiftValues[];
 }
 
-export interface UserRelationships {
+export interface UserKeys extends EntityKeys {
   timesheets: string[];
   presets: string[];
 }
 
-export type User = EntityType<UserAttributes> & {
-  relationships: UserRelationships;
-};
+export type User = Entity<UserAttributes, UserKeys>;

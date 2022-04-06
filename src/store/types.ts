@@ -5,18 +5,34 @@ export interface Timestamps {
   changed: string;
 }
 
+export type EntityAttributes = Record<string, any>;
+
 export type EntityKeys = Record<string, string | string[]>;
 
-export interface Entity extends Timestamps {
+export interface EntityBase extends Timestamps {
   id: string;
+  attributes: EntityAttributes;
   relationships: EntityKeys;
 }
 
-export type EntityAttributesGetter<A> = (attributes: any) => A;
-
-export interface EntityType<A> extends Entity {
+export interface Entity<A extends EntityAttributes, K extends EntityKeys>
+  extends EntityBase {
   attributes: A;
+  relationships: K;
 }
+
+export interface EntityRelationship {
+  type: string;
+  foreignKey: string;
+  backPopulates: string;
+}
+
+export type EntityRelationships = {
+  belongsTo?: EntityRelationship;
+  hasMany?: EntityRelationship[];
+};
+
+export type EntityAttributesGetter<A> = (attributes: any) => A;
 
 export interface EntitiesByID<T> {
   [key: string]: T;

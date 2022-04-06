@@ -9,7 +9,11 @@ export const getAttributes = ({ name, value }: any): SettingAttributes => ({
 
 export const relationships = {};
 
-const settings = createEntitySlice("settings", getAttributes, relationships);
+const settings = createEntitySlice<"settings", SettingAttributes, {}>(
+  "settings",
+  getAttributes,
+  relationships
+);
 
 export const selectSettings = (state: { settings: EntityState<Setting> }) =>
   state.settings;

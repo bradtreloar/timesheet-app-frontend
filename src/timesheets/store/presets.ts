@@ -1,8 +1,8 @@
 import { createEntitySlice } from "store/entity";
 import { EntityState } from "store/types";
-import { Preset, PresetAttributes } from "timesheets/types";
+import { Preset, PresetAttributes, PresetKeys } from "timesheets/types";
 
-const presets = createEntitySlice(
+const presets = createEntitySlice<"presets", PresetAttributes, PresetKeys>(
   "presets",
   ({ value }: any): PresetAttributes => ({ value }),
   {

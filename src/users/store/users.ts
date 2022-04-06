@@ -1,8 +1,8 @@
 import { createEntitySlice } from "store/entity";
 import { EntityState } from "store/types";
-import { User, UserAttributes } from "users/types";
+import { User, UserAttributes, UserKeys } from "users/types";
 
-const users = createEntitySlice(
+const users = createEntitySlice<"users", UserAttributes, UserKeys>(
   "users",
   ({
     email,

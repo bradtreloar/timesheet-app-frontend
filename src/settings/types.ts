@@ -1,11 +1,11 @@
-import { EntityType } from "store/types";
+import { Entity, EntityAttributes } from "store/types";
 
-export interface SettingAttributes {
+export interface SettingAttributes extends EntityAttributes {
   name: string;
   value: string;
 }
 
-export type Setting = EntityType<SettingAttributes>;
+export type Setting = Entity<SettingAttributes, {}>;
 
 export interface Settings {
   timesheetRecipients: string;

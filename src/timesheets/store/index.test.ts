@@ -12,15 +12,15 @@ import { actions as absenceActions } from "./absences";
 import createStore, { AppStore } from "store/createStore";
 import {
   AbsenceAttributes,
+  EntryKeys,
   Shift,
   ShiftAttributes,
   Timesheet,
 } from "timesheets/types";
 import assert from "assert";
 import { AsyncThunk, createAsyncThunk } from "@reduxjs/toolkit";
-import { EntityType } from "store/types";
 import { DateTime } from "luxon";
-import { EntryActions } from "./types";
+import { Entity, EntityAttributes, EntityKeys } from "store/types";
 
 const seedStore = (timesheets: Timesheet[]) => {
   const store = createStore();
@@ -28,9 +28,9 @@ const seedStore = (timesheets: Timesheet[]) => {
   return store;
 };
 
-const createMockAsyncThunk = <A>(
+const createMockAsyncThunk = <A extends EntityAttributes, K extends EntityKeys>(
   entityType: string,
-  payload: EntityType<A>[]
+  payload: Entity<A, K>[]
 ) =>
   createAsyncThunk(
     `${entityType}/fetchAllBelongingTo`,
@@ -43,21 +43,13 @@ describe("fetchTimesheetEntries", () => {
     const timesheet = randomTimesheet(user);
     const shift = randomShift(timesheet, DateTime.local());
     const store = seedStore([timesheet]);
+    jest.spyOn(shiftActions, "fetchAllBelongingTo").mockImplementation(
+      createMockAsyncThunk<ShiftAttributes, EntryKeys>("shifts", [shift])
+    );
     jest
-      .spyOn(
-        shiftActions as EntryActions<ShiftAttributes>,
-        "fetchAllBelongingTo"
-      )
+      .spyOn(absenceActions, "fetchAllBelongingTo")
       .mockImplementation(
-        createMockAsyncThunk<ShiftAttributes>("shifts", [shift])
-      );
-    jest
-      .spyOn(
-        absenceActions as EntryActions<AbsenceAttributes>,
-        "fetchAllBelongingTo"
-      )
-      .mockImplementation(
-        createMockAsyncThunk<AbsenceAttributes>("absences", [])
+        createMockAsyncThunk<AbsenceAttributes, EntryKeys>("absences", [])
       );
 
     await store.dispatch(fetchTimesheetEntries(timesheet));
@@ -74,19 +66,13 @@ describe("fetchTimesheetEntries", () => {
     const absence = randomAbsence(timesheet, DateTime.local());
     const store = seedStore([timesheet]);
     jest
-      .spyOn(
-        shiftActions as EntryActions<ShiftAttributes>,
-        "fetchAllBelongingTo"
-      )
-      .mockImplementation(createMockAsyncThunk<ShiftAttributes>("shifts", []));
-    jest
-      .spyOn(
-        absenceActions as EntryActions<AbsenceAttributes>,
-        "fetchAllBelongingTo"
-      )
+      .spyOn(shiftActions, "fetchAllBelongingTo")
       .mockImplementation(
-        createMockAsyncThunk<AbsenceAttributes>("absences", [absence])
+        createMockAsyncThunk<ShiftAttributes, EntryKeys>("shifts", [])
       );
+    jest.spyOn(absenceActions, "fetchAllBelongingTo").mockImplementation(
+      createMockAsyncThunk<AbsenceAttributes, EntryKeys>("absences", [absence])
+    );
 
     await store.dispatch(fetchTimesheetEntries(timesheet));
 

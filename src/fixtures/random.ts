@@ -4,7 +4,6 @@ import faker from "faker";
 import { defaults, random, random as randomNumber, range } from "lodash";
 import { DateTime } from "luxon";
 import { reasons } from "timesheets/forms/TimesheetForm";
-import { EntityType } from "store/types";
 import {
   Absence,
   Preset,

@@ -1,25 +1,36 @@
 import faker from "faker";
 import Randomstring from "randomstring";
 import { defaults } from "lodash";
-import { EntityRelationship, EntityRelationships } from "store/entity";
-import { EntityKeys } from "store/types";
+import {
+  Entity,
+  EntityAttributes,
+  EntityKeys,
+  EntityRelationship,
+  EntityRelationships,
+} from "store/types";
 import { randomID } from "./random";
 
-export interface MockEntityAttributes {
+export interface MockEntityAttributes extends EntityAttributes {
   title: string;
 }
+
+export interface MockEntityKeys extends EntityKeys {
+  mockParentEntity: string;
+}
+
+export type MockEntity = Entity<MockEntityAttributes, {}>;
 
 export const mockEntityRelationships = (): EntityRelationships => {
   return {
     belongsTo: {
-      type: Randomstring.generate(),
-      foreignKey: Randomstring.generate(),
+      type: "mockParentEntities",
+      foreignKey: "mockParentEntity",
       backPopulates: Randomstring.generate(),
     },
     hasMany: [
       {
-        type: Randomstring.generate(),
-        foreignKey: Randomstring.generate(),
+        type: "mockChildEntities",
+        foreignKey: "mockChildEntities",
         backPopulates: Randomstring.generate(),
       },
     ],
@@ -38,7 +49,10 @@ export const mockEntityType = () => {
     type: Randomstring.generate(),
     getAttributes,
     relationships,
-    randomEntity: (attributes?: MockEntityAttributes, keys?: EntityKeys) => ({
+    randomEntity: (
+      attributes?: MockEntityAttributes,
+      keys?: MockEntityKeys
+    ) => ({
       id: faker.random.uuid(),
       created: "",
       changed: "",

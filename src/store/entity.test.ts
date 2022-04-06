@@ -1,16 +1,19 @@
 import { configureStore } from "@reduxjs/toolkit";
 import faker from "faker";
-import Randomstring from "randomstring";
-import { defaults, merge, range, values } from "lodash";
+import { merge, range } from "lodash";
 import {
   buildEntityState,
   createEntitySlice,
   emptyEntityState,
-  EntityRelationship,
-  EntityRelationships,
 } from "./entity";
 import * as datastore from "datastore";
-import { EntityAttributesGetter, EntityKeys, EntityType } from "./types";
+import {
+  Entity,
+  EntityAttributes,
+  EntityAttributesGetter,
+  EntityKeys,
+  EntityRelationships,
+} from "./types";
 import { randomID } from "fixtures/random";
 import assert from "assert";
 import { mockEntityType } from "fixtures/entity";
@@ -34,11 +37,11 @@ const createMockStore = <A>(
   return { actions, store };
 };
 
-function seedMockStore<A>(
+function seedMockStore<A extends EntityAttributes, K extends EntityKeys>(
   type: string,
   getEntityAttributes: EntityAttributesGetter<A>,
   relationships: EntityRelationships,
-  mockEntities: EntityType<A>[]
+  mockEntities: Entity<A, K>[]
 ) {
   const { actions, store } = createMockStore(
     type,
@@ -68,12 +71,7 @@ describe("buildEntityState", () => {
   });
 
   test("builds idle state when entities passed", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
+    const { randomEntity } = mockEntityType();
     const entity = randomEntity();
     expect(buildEntityState([entity])).toStrictEqual({
       status: "idle",
@@ -575,6 +573,7 @@ describe("reducer", () => {
           id: ownee1ID,
           created: "",
           changed: "",
+          attributes: {},
           relationships: {
             [hasManyBPKey]: owner1.id,
           },
@@ -583,6 +582,7 @@ describe("reducer", () => {
           id: ownee2ID,
           created: "",
           changed: "",
+          attributes: {},
           relationships: {
             [hasManyBPKey]: owner2.id,
           },
