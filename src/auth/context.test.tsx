@@ -2,12 +2,12 @@ import React from "react";
 import { act } from "@testing-library/react";
 import { renderHook } from "@testing-library/react-hooks";
 import { AuthProvider, useAuth } from "./context";
-import * as datastore from "datastore";
+import * as auth from "datastore/auth";
 import { randomPassword, randomCurrentUser } from "fixtures/random";
 import Randomstring from "randomstring";
 import { CurrentUser } from "./types";
 
-jest.mock("datastore");
+jest.mock("datastore/auth");
 
 afterEach(() => {
   jest.resetAllMocks();
@@ -19,7 +19,7 @@ const wrapper: React.FC = ({ children }) => (
 
 describe("unauthenticated user", () => {
   beforeEach(() => {
-    jest.spyOn(datastore, "fetchCurrentUser").mockResolvedValue(null);
+    jest.spyOn(auth, "fetchCurrentUser").mockResolvedValue(null);
   });
 
   test("get unauthenticated status", async () => {
@@ -37,7 +37,7 @@ describe("unauthenticated user", () => {
     const user = randomCurrentUser();
     const password = randomPassword();
     const rememberLogin = true;
-    jest.spyOn(datastore, "login").mockResolvedValue(user);
+    jest.spyOn(auth, "login").mockResolvedValue(user);
 
     const { result, waitForNextUpdate } = renderHook(async () => useAuth(), {
       wrapper,
@@ -49,7 +49,7 @@ describe("unauthenticated user", () => {
     });
     await waitForNextUpdate();
 
-    expect(datastore.login).toHaveBeenCalledWith(
+    expect(auth.login).toHaveBeenCalledWith(
       user.email,
       password,
       rememberLogin
@@ -63,8 +63,8 @@ describe("unauthenticated user", () => {
     const user = randomCurrentUser();
     const password = randomPassword();
     jest
-      .spyOn(datastore, "login")
-      .mockRejectedValue(new datastore.InvalidLoginException());
+      .spyOn(auth, "login")
+      .mockRejectedValue(new auth.InvalidLoginException());
 
     const { result, waitForNextUpdate } = renderHook(async () => useAuth(), {
       wrapper,
@@ -79,7 +79,7 @@ describe("unauthenticated user", () => {
 
   test("requests password reset", async () => {
     const user = randomCurrentUser();
-    jest.spyOn(datastore, "forgotPassword").mockResolvedValue(undefined);
+    jest.spyOn(auth, "forgotPassword").mockResolvedValue(undefined);
 
     const { result, waitForNextUpdate } = renderHook(async () => useAuth(), {
       wrapper,
@@ -90,14 +90,14 @@ describe("unauthenticated user", () => {
       state.forgotPassword(user.email);
     });
 
-    expect(datastore.forgotPassword).toHaveBeenCalledWith(user.email);
+    expect(auth.forgotPassword).toHaveBeenCalledWith(user.email);
   });
 
   test("resets password using token", async () => {
     const user = randomCurrentUser();
     const token = Randomstring.generate(50);
     const password = randomPassword();
-    jest.spyOn(datastore, "resetPassword").mockResolvedValue(undefined);
+    jest.spyOn(auth, "resetPassword").mockResolvedValue(undefined);
 
     const { result, waitForNextUpdate } = renderHook(async () => useAuth(), {
       wrapper,
@@ -108,7 +108,7 @@ describe("unauthenticated user", () => {
       state.resetPassword(user.email, token, password);
     });
 
-    expect(datastore.resetPassword).toHaveBeenCalledWith(
+    expect(auth.resetPassword).toHaveBeenCalledWith(
       user.email,
       token,
       password
@@ -121,7 +121,7 @@ describe("authenticated user", () => {
 
   beforeEach(() => {
     currentUser = randomCurrentUser();
-    jest.spyOn(datastore, "fetchCurrentUser").mockResolvedValue(currentUser);
+    jest.spyOn(auth, "fetchCurrentUser").mockResolvedValue(currentUser);
   });
 
   test("get authenticated status", async () => {
@@ -136,7 +136,7 @@ describe("authenticated user", () => {
   });
 
   test("annulls user on logout", async () => {
-    jest.spyOn(datastore, "logout").mockResolvedValue(undefined);
+    jest.spyOn(auth, "logout").mockResolvedValue(undefined);
 
     const { result, waitForNextUpdate } = renderHook(async () => useAuth(), {
       wrapper,
@@ -148,14 +148,14 @@ describe("authenticated user", () => {
     });
     await waitForNextUpdate();
 
-    expect(datastore.logout).toHaveBeenCalledWith();
+    expect(auth.logout).toHaveBeenCalledWith();
     const updatedState = await result.current;
     expect(updatedState.isAuthenticated).toBe(false);
     expect(updatedState.user).toBe(null);
   });
 
   test("annulls user when session has expired", async () => {
-    jest.spyOn(datastore, "fetchCurrentUser").mockResolvedValue(null);
+    jest.spyOn(auth, "fetchCurrentUser").mockResolvedValue(null);
 
     const { result, waitForNextUpdate } = renderHook(async () => useAuth(), {
       wrapper,
@@ -171,7 +171,7 @@ describe("authenticated user", () => {
     const updatedUser = Object.assign({}, currentUser, {
       name: randomCurrentUser().name,
     });
-    jest.spyOn(datastore, "updateUser").mockResolvedValue(updatedUser);
+    jest.spyOn(auth, "updateUser").mockResolvedValue(updatedUser);
 
     const { result, waitForNextUpdate } = renderHook(async () => useAuth(), {
       wrapper,
@@ -194,7 +194,7 @@ describe("admin user", () => {
   beforeEach(() => {
     currentUser = randomCurrentUser();
     currentUser.isAdmin = true;
-    jest.spyOn(datastore, "fetchCurrentUser").mockResolvedValue(currentUser);
+    jest.spyOn(auth, "fetchCurrentUser").mockResolvedValue(currentUser);
   });
 
   test("gets admin status", async () => {

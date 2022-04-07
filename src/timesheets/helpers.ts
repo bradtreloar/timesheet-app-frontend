@@ -1,4 +1,3 @@
-import { date } from "faker";
 import { DateTime } from "luxon";
 import { Time } from "utils/date";
 import {

@@ -1,5 +1,5 @@
 import React, { useContext, createContext, useCallback } from "react";
-import * as datastore from "datastore";
+import * as auth from "datastore/auth";
 import { CurrentUser } from "./types";
 
 type Status = "idle" | "pending" | "fulfilled" | "rejected";
@@ -47,16 +47,16 @@ const AuthProvider: React.FC = ({ children }) => {
   const isAdmin = user !== null && user.isAdmin;
 
   const refreshUser = useCallback(async () => {
-    const currentUser = await datastore.fetchCurrentUser();
+    const currentUser = await auth.fetchCurrentUser();
     setUser(currentUser);
   }, [setUser]);
 
   const login = async (email: string, password: string, remember: boolean) => {
     try {
-      const user = await datastore.login(email, password, remember);
+      const user = await auth.login(email, password, remember);
       setUser(user);
     } catch (error: any) {
-      if (error instanceof datastore.InvalidLoginException) {
+      if (error instanceof auth.InvalidLoginException) {
         throw new Error(`Unrecognised email or password.`);
       } else {
         console.error(error);
@@ -67,7 +67,7 @@ const AuthProvider: React.FC = ({ children }) => {
 
   const logout = async () => {
     try {
-      await datastore.logout();
+      await auth.logout();
       setUser(null);
     } catch (error: any) {
       if (error.response?.status === 403) {
@@ -78,7 +78,7 @@ const AuthProvider: React.FC = ({ children }) => {
 
   const forgotPassword = async (email: string) => {
     try {
-      await datastore.forgotPassword(email);
+      await auth.forgotPassword(email);
     } catch (error: any) {
       if (error.response?.status === 422) {
         throw new Error(`Unable to find a user with that email address.`);
@@ -92,7 +92,7 @@ const AuthProvider: React.FC = ({ children }) => {
 
   const setPassword = async (password: string) => {
     try {
-      await datastore.setPassword(password);
+      await auth.setPassword(password);
     } catch (error) {
       throw new Error(`Unable to set password.`);
     }
@@ -104,7 +104,7 @@ const AuthProvider: React.FC = ({ children }) => {
     password: string
   ) => {
     try {
-      await datastore.resetPassword(email, token, password);
+      await auth.resetPassword(email, token, password);
     } catch (error) {
       throw new Error(`Unable to reset password.`);
     }
@@ -112,7 +112,7 @@ const AuthProvider: React.FC = ({ children }) => {
 
   const updateUser = async (user: CurrentUser) => {
     try {
-      const updatedUser = await datastore.updateUser(user);
+      const updatedUser = await auth.updateUser(user);
       setUser(updatedUser);
     } catch (error) {
       throw new Error(`Unable to update user.`);

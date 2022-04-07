@@ -6,7 +6,6 @@ import { MemoryRouter } from "react-router";
 import { MockAuthProvider } from "fixtures/auth";
 import { MessagesProvider } from "messages/context";
 
-jest.mock("datastore");
 
 const Fixture: React.FC = () => {
   return (

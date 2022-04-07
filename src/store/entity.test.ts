@@ -6,7 +6,7 @@ import {
   createEntitySlice,
   emptyEntityState,
 } from "./entity";
-import * as datastore from "datastore";
+import * as entityDatastore from "datastore/entity";
 import {
   Entity,
   EntityAttributes,
@@ -17,7 +17,7 @@ import {
 import { randomID } from "fixtures/random";
 import assert from "assert";
 import { mockEntityType } from "fixtures/entity";
-jest.mock("datastore");
+jest.mock("datastore/entity");
 
 const createMockStore = <A>(
   mockEntitytype: string,
@@ -138,11 +138,11 @@ describe("asynchronous thunk actions", () => {
         relationships,
         []
       );
-      jest.spyOn(datastore, "fetchEntities").mockResolvedValue([entity]);
+      jest.spyOn(entityDatastore, "fetchEntities").mockResolvedValue([entity]);
 
       const action = await store.dispatch(actions.fetchAll());
 
-      expect(datastore.fetchEntities).toHaveBeenCalledWith(
+      expect(entityDatastore.fetchEntities).toHaveBeenCalledWith(
         type,
         getAttributes,
         relationships
@@ -169,7 +169,7 @@ describe("asynchronous thunk actions", () => {
         []
       );
       jest
-        .spyOn(datastore, "fetchEntitiesBelongingTo")
+        .spyOn(entityDatastore, "fetchEntitiesBelongingTo")
         .mockResolvedValue([entity]);
       assert(actions.fetchAllBelongingTo !== null);
 
@@ -177,7 +177,7 @@ describe("asynchronous thunk actions", () => {
         actions.fetchAllBelongingTo(parentEntityID)
       );
 
-      expect(datastore.fetchEntitiesBelongingTo).toHaveBeenCalledWith(
+      expect(entityDatastore.fetchEntitiesBelongingTo).toHaveBeenCalledWith(
         type,
         getAttributes,
         relationships,
@@ -203,7 +203,7 @@ describe("asynchronous thunk actions", () => {
         relationships,
         []
       );
-      jest.spyOn(datastore, "createEntity").mockResolvedValue(entity);
+      jest.spyOn(entityDatastore, "createEntity").mockResolvedValue(entity);
 
       const action = await store.dispatch(
         actions.add({
@@ -211,7 +211,7 @@ describe("asynchronous thunk actions", () => {
         })
       );
 
-      expect(datastore.createEntity).toHaveBeenCalledWith(
+      expect(entityDatastore.createEntity).toHaveBeenCalledWith(
         type,
         getAttributes,
         relationships,
@@ -241,7 +241,7 @@ describe("asynchronous thunk actions", () => {
         []
       );
       jest
-        .spyOn(datastore, "createEntityBelongingTo")
+        .spyOn(entityDatastore, "createEntityBelongingTo")
         .mockResolvedValue(entity);
       assert(actions.addBelongingTo !== null);
 
@@ -254,7 +254,7 @@ describe("asynchronous thunk actions", () => {
         })
       );
 
-      expect(datastore.createEntityBelongingTo).toHaveBeenCalledWith(
+      expect(entityDatastore.createEntityBelongingTo).toHaveBeenCalledWith(
         type,
         getAttributes,
         relationships,
@@ -283,11 +283,11 @@ describe("asynchronous thunk actions", () => {
         relationships,
         []
       );
-      jest.spyOn(datastore, "updateEntity").mockResolvedValue(entity);
+      jest.spyOn(entityDatastore, "updateEntity").mockResolvedValue(entity);
 
       const action = await store.dispatch(actions.update(entity));
 
-      expect(datastore.updateEntity).toHaveBeenCalledWith(
+      expect(entityDatastore.updateEntity).toHaveBeenCalledWith(
         type,
         getAttributes,
         relationships,
@@ -313,11 +313,11 @@ describe("asynchronous thunk actions", () => {
         relationships,
         []
       );
-      jest.spyOn(datastore, "deleteEntity").mockResolvedValue(entity);
+      jest.spyOn(entityDatastore, "deleteEntity").mockResolvedValue(entity);
 
       const action = await store.dispatch(actions.delete(entity));
 
-      expect(datastore.deleteEntity).toHaveBeenCalledWith(type, entity);
+      expect(entityDatastore.deleteEntity).toHaveBeenCalledWith(type, entity);
       expect(action.type).toBe(`${type}/delete/fulfilled`);
       expect(action.payload).toBe(entity);
     });

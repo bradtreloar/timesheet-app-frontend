@@ -14,7 +14,7 @@ import {
   fetchEntities,
   fetchEntitiesBelongingTo,
   updateEntity,
-} from "datastore";
+} from "datastore/entity";
 import {
   Entity,
   EntityAttributes,

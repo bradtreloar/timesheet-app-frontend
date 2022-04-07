@@ -3,7 +3,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { randomSettings, randomUser } from "fixtures/random";
-import * as datastore from "datastore";
+import * as entityDatastore from "datastore/entity";
 import { Provider } from "react-redux";
 import { actions as settingsActions } from "settings/store/settings";
 import SettingsPage from "./SettingsPage";
@@ -15,8 +15,6 @@ import {
 } from "settings/store/settings";
 import { MessagesProvider } from "messages/context";
 import { MockAuthProvider } from "fixtures/auth";
-
-jest.mock("datastore");
 
 const user = randomUser();
 const settings = randomSettings();
@@ -60,7 +58,7 @@ test("renders settings page", async () => {
 test("handles SettingsForm submission", async () => {
   const store = createStore();
   store.dispatch(settingsActions.set(buildEntityState(settings)));
-  jest.spyOn(datastore, "updateEntity").mockResolvedValue(settings[0]);
+  jest.spyOn(entityDatastore, "updateEntity").mockResolvedValue(settings[0]);
 
   await act(async () => {
     render(<Fixture store={store} />);
@@ -69,7 +67,7 @@ test("handles SettingsForm submission", async () => {
     userEvent.click(screen.getByText(/^save settings$/i));
   });
 
-  expect(datastore.updateEntity).toHaveBeenCalledWith(
+  expect(entityDatastore.updateEntity).toHaveBeenCalledWith(
     "settings",
     getSettingAttributes,
     settingRelationships,
@@ -83,7 +81,7 @@ test("displays error when settings update fails", async () => {
   store.dispatch(settingsActions.set(buildEntityState(settings)));
   const errorMessage = "unable to save settings";
   jest
-    .spyOn(datastore, "updateEntity")
+    .spyOn(entityDatastore, "updateEntity")
     .mockRejectedValue(new Error(errorMessage));
 
   await act(async () => {

@@ -11,7 +11,7 @@ import React from "react";
 import { Provider } from "react-redux";
 import { MemoryRouter, Route } from "react-router";
 import faker from "faker";
-import * as datastore from "datastore";
+import * as entityDatastore from "datastore/entity";
 import UserFormPage from "./UserFormPage";
 import createStore, { AppStore } from "store/createStore";
 import { actions as userActions } from "users/store/users";
@@ -21,8 +21,6 @@ import { MockAuthProvider } from "fixtures/auth";
 import { MessagesProvider } from "messages/context";
 import UserDeletePage from "./UserDeletePage";
 import { AuthContextValue } from "auth/context";
-
-jest.mock("datastore");
 
 const Fixture: React.FC<{
   authContextValue: Partial<AuthContextValue>;
@@ -77,7 +75,7 @@ describe("new user form", () => {
     const currentUser = randomCurrentUser();
     const user = randomUser();
     const store = createStore();
-    jest.spyOn(datastore, "createEntity").mockResolvedValue(user);
+    jest.spyOn(entityDatastore, "createEntity").mockResolvedValue(user);
 
     await act(async () => {
       render(
@@ -140,7 +138,7 @@ describe("existing user form", () => {
     });
     const store = createStore();
     store.dispatch(userActions.set(buildEntityState([user])));
-    jest.spyOn(datastore, "updateEntity").mockResolvedValue(updatedUser);
+    jest.spyOn(entityDatastore, "updateEntity").mockResolvedValue(updatedUser);
 
     await act(async () => {
       render(

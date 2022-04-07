@@ -10,7 +10,7 @@ import {
 import React from "react";
 import { Provider } from "react-redux";
 import { MemoryRouter, Route } from "react-router";
-import * as datastore from "datastore";
+import * as entityDatastore from "datastore/entity";
 import { actions as userActions } from "users/store/users";
 import UserDeletePage from "./UserDeletePage";
 import createStore, { AppStore } from "store/createStore";
@@ -18,8 +18,6 @@ import { buildEntityState } from "store/entity";
 import { AuthContextValue } from "auth/context";
 import { MockAuthProvider } from "fixtures/auth";
 import { MessagesProvider } from "messages/context";
-
-jest.mock("datastore");
 
 const Fixture: React.FC<{
   authContextValue: Partial<AuthContextValue>;
@@ -69,7 +67,7 @@ test("handles clicking delete button", async () => {
   const user = randomUser();
   const store = createStore();
   store.dispatch(userActions.set(buildEntityState([user])));
-  jest.spyOn(datastore, "deleteEntity").mockResolvedValue(user);
+  jest.spyOn(entityDatastore, "deleteEntity").mockResolvedValue(user);
 
   await act(async () => {
     render(
