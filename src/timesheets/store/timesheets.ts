@@ -47,9 +47,9 @@ export const selectTimesheets = (state: {
   timesheets: EntityState<Timesheet>;
 }) => state.timesheets;
 
-class UndefinedEntryException extends Error {
+export class UndefinedEntryException extends Error {
   constructor(id: string) {
-    super(id);
+    super(`Cannot find entry with ID ${id}`);
   }
 }
 

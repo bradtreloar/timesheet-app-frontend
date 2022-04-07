@@ -12,6 +12,7 @@ import shifts from "./shifts";
 import timesheets, {
   selectTimesheetEntries,
   selectTimesheets,
+  UndefinedEntryException,
 } from "./timesheets";
 
 describe("selectTimesheetEntries", () => {
@@ -65,5 +66,34 @@ describe("selectTimesheetEntries", () => {
     const entries = selectTimesheetEntries(timesheet)(store.getState());
 
     expect(entries).toStrictEqual([shift2, absence, shift1]);
+  });
+
+  it("throws exception when shift does not exist", () => {
+    const store = createStore();
+    const user = randomUser();
+    const timesheet = randomTimesheet(user);
+    const shift = randomShift(timesheet, DateTime.local().minus({ days: 1 }));
+    timesheet.relationships.shifts = [shift.id];
+    store.dispatch(timesheets.actions.set(buildEntityState([timesheet])));
+
+    expect(() => {
+      selectTimesheetEntries(timesheet)(store.getState());
+    }).toThrow(UndefinedEntryException);
+  });
+
+  it("throws exception when absence does not exist", () => {
+    const store = createStore();
+    const user = randomUser();
+    const timesheet = randomTimesheet(user);
+    const absence = randomAbsence(
+      timesheet,
+      DateTime.local().minus({ days: 1 })
+    );
+    timesheet.relationships.absences = [absence.id];
+    store.dispatch(timesheets.actions.set(buildEntityState([timesheet])));
+
+    expect(() => {
+      selectTimesheetEntries(timesheet)(store.getState());
+    }).toThrow(UndefinedEntryException);
   });
 });
