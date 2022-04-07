@@ -40,11 +40,30 @@ describe("selectTimesheetEntries", () => {
     );
     store.dispatch(timesheets.actions.set(buildEntityState([timesheet])));
     store.dispatch(absences.actions.set(buildEntityState([absence])));
-
     timesheet = selectTimesheets(store.getState()).entities.byID[timesheet.id];
 
     const entries = selectTimesheetEntries(timesheet)(store.getState());
 
     expect(entries).toStrictEqual([absence]);
+  });
+
+  it("returns timesheet's entries in date order", () => {
+    const store = createStore();
+    const user = randomUser();
+    let timesheet = randomTimesheet(user);
+    const shift1 = randomShift(timesheet, DateTime.local().minus({ days: 1 }));
+    const absence = randomAbsence(
+      timesheet,
+      DateTime.local().minus({ days: 2 })
+    );
+    const shift2 = randomShift(timesheet, DateTime.local().minus({ days: 3 }));
+    store.dispatch(timesheets.actions.set(buildEntityState([timesheet])));
+    store.dispatch(shifts.actions.set(buildEntityState([shift1, shift2])));
+    store.dispatch(absences.actions.set(buildEntityState([absence])));
+    timesheet = selectTimesheets(store.getState()).entities.byID[timesheet.id];
+
+    const entries = selectTimesheetEntries(timesheet)(store.getState());
+
+    expect(entries).toStrictEqual([shift2, absence, shift1]);
   });
 });

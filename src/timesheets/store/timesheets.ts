@@ -1,5 +1,6 @@
 import { createEntitySlice } from "store/entity";
 import { Entity, EntityState } from "store/types";
+import { getEntryDate } from "timesheets/helpers";
 import {
   Absence,
   AbsenceAttributes,
@@ -74,6 +75,12 @@ export const selectTimesheetEntries = (timesheet: Timesheet) => (state: {
     } else {
       throw new UndefinedEntryException(id);
     }
+  });
+
+  entries.sort((a, b) => {
+    const aDate = getEntryDate(a);
+    const bDate = getEntryDate(b);
+    return aDate.diff(bDate).toMillis();
   });
 
   return entries;
