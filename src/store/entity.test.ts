@@ -123,7 +123,37 @@ describe("synchronous actions", () => {
 });
 
 describe("asynchronous thunk actions", () => {
-  describe("fetch", () => {
+  describe("fetchOne", () => {
+    test("creates fetchOne/fulfilled action when dispatched", async () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entity = randomEntity();
+      const { actions, store } = seedMockStore(
+        type,
+        getAttributes,
+        relationships,
+        []
+      );
+      jest.spyOn(entityDatastore, "fetchEntity").mockResolvedValue(entity);
+
+      const action = await store.dispatch(actions.fetchOne(entity.id));
+
+      expect(entityDatastore.fetchEntity).toHaveBeenCalledWith(
+        type,
+        entity.id,
+        getAttributes,
+        relationships
+      );
+      expect(action.type).toBe(`${type}/fetchOne/fulfilled`);
+      expect(action.payload).toStrictEqual(entity);
+    });
+  });
+
+  describe("fetchAll", () => {
     test("creates fetchAll/fulfilled action when dispatched", async () => {
       const {
         type,
@@ -368,7 +398,27 @@ describe("reducer", () => {
     expect(store.getState()[type]).toStrictEqual(emptyEntityState());
   });
 
-  test("populate store when fetch action is dispatched", () => {
+  test("add entity to store when fetchOne action is dispatched", () => {
+    const {
+      type,
+      getAttributes,
+      relationships,
+      randomEntity,
+    } = mockEntityType();
+    const entity = randomEntity();
+    const { store } = seedMockStore(type, getAttributes, relationships, []);
+    expect(store.getState()[type]).toStrictEqual(emptyEntityState());
+    const entityState = buildEntityState([entity]);
+
+    store.dispatch({
+      type: `${type}/fetchOne/fulfilled`,
+      payload: entity,
+    });
+
+    expect(store.getState()[type]).toStrictEqual(entityState);
+  });
+
+  test("populate store when fetchAll action is dispatched", () => {
     const {
       type,
       getAttributes,

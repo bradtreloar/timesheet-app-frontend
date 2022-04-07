@@ -13,6 +13,7 @@ import {
   deleteEntity,
   fetchEntities,
   fetchEntitiesBelongingTo,
+  fetchEntity,
   updateEntity,
 } from "datastore/entity";
 import {
@@ -80,6 +81,15 @@ export const createEntitySlice = <
       if (extraReducers) {
         extraReducers(builder);
       }
+
+      builder.addCase(asyncActions.fetchOne.fulfilled, (state, action) => {
+        const entity = action.payload;
+        const allIDs = state.entities.allIDs;
+        if (!allIDs.includes(entity.id)) {
+          allIDs.push(entity.id);
+        }
+        state.entities.byID[entity.id] = entity as Draft<Entity<A, K>>;
+      });
 
       builder.addCase(asyncActions.fetchAll.fulfilled, (state, action) => {
         const entities = action.payload;
@@ -261,6 +271,16 @@ export const createAsyncEntityActions = <
   const belongsTo = relationships.belongsTo;
 
   return {
+    fetchOne: createAsyncThunk(
+      `${entityType}/fetchOne`,
+      async (id: string) =>
+        await fetchEntity<T, A, K>(
+          entityType,
+          id,
+          attributesGetter,
+          relationships
+        )
+    ),
     fetchAll: createAsyncThunk(
       `${entityType}/fetchAll`,
       async () =>
