@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { BaseException } from "./exceptions";
 
 /**
  * A class for storing a time with only hours and minute.
@@ -186,7 +187,7 @@ export class Time {
   }
 }
 
-export class InvalidTimeException extends Error {
+export class InvalidTimeException extends BaseException {
   constructor(message: string) {
     super(message);
     Object.setPrototypeOf(this, InvalidTimeException.prototype);

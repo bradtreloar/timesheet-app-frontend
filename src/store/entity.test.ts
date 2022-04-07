@@ -185,7 +185,8 @@ describe("asynchronous thunk actions", () => {
         relationships
       );
       expect(action.type).toBe(`${type}/fetchOne/rejected`);
-      expect(action.error.message).toStrictEqual(`Not found: ${type}/${id}`);
+      expect(action.error.name).toBe("EntityNotFoundException");
+      expect(action.error.message).toBe(`Not found: ${type}/${id}`);
     });
   });
 

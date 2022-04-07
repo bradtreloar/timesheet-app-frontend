@@ -4,32 +4,33 @@ import { client, jsonAPIClient } from "datastore/clients";
 import { omit } from "lodash";
 import { CurrentUser } from "auth/types";
 import { getCSRFCookie, UnknownError } from "datastore";
+import { BaseException } from "utils/exceptions";
 
-export class InvalidLoginException extends Error {
+export class InvalidLoginException extends BaseException {
   constructor() {
     super("Invalid username or password");
   }
 }
 
-export class InvalidPasswordException extends Error {
+export class InvalidPasswordException extends BaseException {
   constructor() {
     super("Invalid password");
   }
 }
 
-export class UnauthorizedForgotPasswordException extends Error {
+export class UnauthorizedForgotPasswordException extends BaseException {
   constructor() {
     super("Unauthorized forgot-password attempt");
   }
 }
 
-export class UnauthorizedLogoutException extends Error {
+export class UnauthorizedLogoutException extends BaseException {
   constructor() {
     super("Unauthorized logout attempt");
   }
 }
 
-export class UnauthorizedResetPasswordException extends Error {
+export class UnauthorizedResetPasswordException extends BaseException {
   constructor() {
     super("Unauthorized password reset attempt");
   }

@@ -11,6 +11,7 @@ import {
   TimesheetAttributes,
   TimesheetKeys,
 } from "timesheets/types";
+import { BaseException } from "utils/exceptions";
 
 const timesheets = createEntitySlice<
   "timesheets",
@@ -47,7 +48,7 @@ export const selectTimesheets = (state: {
   timesheets: EntityState<Timesheet>;
 }) => state.timesheets;
 
-export class UndefinedEntryException extends Error {
+export class UndefinedEntryException extends BaseException {
   constructor(id: string) {
     super(`Cannot find entry with ID ${id}`);
   }

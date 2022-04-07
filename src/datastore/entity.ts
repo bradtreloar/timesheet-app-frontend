@@ -15,8 +15,9 @@ import {
   EntityRelationships,
 } from "store/types";
 import { getCSRFCookie } from "datastore";
+import { BaseException } from "utils/exceptions";
 
-export class EntityNotFoundException extends Error {
+export class EntityNotFoundException extends BaseException {
   constructor(type: string, id: string) {
     super(`Not found: ${type}/${id}`);
   }
