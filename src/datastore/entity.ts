@@ -30,7 +30,7 @@ export const fetchEntity = async <
     data: EntityResource<T, A>;
   }> = await jsonAPIClient.get(`/${type}/${id}`);
   const { data } = response.data;
-  return parseEntity(attributesGetter, relationships, data);
+  return parseEntity<T, A, K>(attributesGetter, relationships, data);
 };
 
 export const fetchEntities = async <
@@ -54,7 +54,7 @@ export const fetchEntities = async <
   });
   const { data } = response.data;
   return data.map((resource) => {
-    return parseEntity(attributesGetter, relationships, resource);
+    return parseEntity<T, A, K>(attributesGetter, relationships, resource);
   });
 };
 
@@ -75,7 +75,7 @@ export const fetchEntitiesBelongingTo = async <
   }> = await jsonAPIClient.get(`/${belongsTo.type}/${belongsToID}/${type}`);
   const { data } = response.data;
   return data.map((resource) => {
-    return parseEntity(attributesGetter, relationships, resource);
+    return parseEntity<T, A, K>(attributesGetter, relationships, resource);
   });
 };
 
@@ -97,7 +97,7 @@ export const createEntity = async <
     data: resource,
   });
   const { data } = response.data;
-  return parseEntity(attributesGetter, relationships, data);
+  return parseEntity<T, A, K>(attributesGetter, relationships, data);
 };
 
 export const createEntityBelongingTo = async <
@@ -121,7 +121,7 @@ export const createEntityBelongingTo = async <
     data: resource,
   });
   const { data } = response.data;
-  return parseEntity(attributesGetter, relationships, data);
+  return parseEntity<T, A, K>(attributesGetter, relationships, data);
 };
 
 export const updateEntity = async <
@@ -142,7 +142,7 @@ export const updateEntity = async <
     data: resource,
   });
   const { data } = response.data;
-  return parseEntity(attributesGetter, relationships, data);
+  return parseEntity<T, A, K>(attributesGetter, relationships, data);
 };
 
 export const deleteEntity = async <
