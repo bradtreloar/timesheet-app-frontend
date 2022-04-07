@@ -355,445 +355,473 @@ describe("asynchronous thunk actions", () => {
 });
 
 describe("reducer", () => {
-  test("populate store when set action is dispatched", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    const entities = range(5).map(() => randomEntity());
-    const { store } = seedMockStore(type, getAttributes, relationships, []);
-    expect(store.getState()[type]).toStrictEqual(emptyEntityState());
-    const entityState = buildEntityState(entities);
+  describe("<type>/set", () => {
+    test("populate store when set action is dispatched", () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entities = range(5).map(() => randomEntity());
+      const { store } = seedMockStore(type, getAttributes, relationships, []);
+      expect(store.getState()[type]).toStrictEqual(emptyEntityState());
+      const entityState = buildEntityState(entities);
 
-    store.dispatch({
-      type: `${type}/set`,
-      payload: entityState,
+      store.dispatch({
+        type: `${type}/set`,
+        payload: entityState,
+      });
+
+      expect(store.getState()[type]).toStrictEqual(entityState);
     });
-
-    expect(store.getState()[type]).toStrictEqual(entityState);
   });
 
-  test("clear store when clear action is dispatched", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    const entities = range(5).map(() => randomEntity());
-    const { store } = seedMockStore(
-      type,
-      getAttributes,
-      relationships,
-      entities
-    );
-    expect(store.getState()[type]).not.toStrictEqual(emptyEntityState());
+  describe("<type>/clear", () => {
+    test("clear store when clear action is dispatched", () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entities = range(5).map(() => randomEntity());
+      const { store } = seedMockStore(
+        type,
+        getAttributes,
+        relationships,
+        entities
+      );
+      expect(store.getState()[type]).not.toStrictEqual(emptyEntityState());
 
-    store.dispatch({
-      type: `${type}/clear`,
+      store.dispatch({
+        type: `${type}/clear`,
+      });
+
+      expect(store.getState()[type]).toStrictEqual(emptyEntityState());
     });
-
-    expect(store.getState()[type]).toStrictEqual(emptyEntityState());
   });
 
-  test("add entity to store when fetchOne action is dispatched", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    const entity = randomEntity();
-    const { store } = seedMockStore(type, getAttributes, relationships, []);
-    expect(store.getState()[type]).toStrictEqual(emptyEntityState());
+  describe("<type>/fetchOne", () => {
+    test("add entity to store when action type is fulfilled", () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entity = randomEntity();
+      const { store } = seedMockStore(type, getAttributes, relationships, []);
+      expect(store.getState()[type]).toStrictEqual(emptyEntityState());
 
-    store.dispatch({
-      type: `${type}/fetchOne/fulfilled`,
-      payload: entity,
+      store.dispatch({
+        type: `${type}/fetchOne/fulfilled`,
+        payload: entity,
+      });
+
+      expect(store.getState()[type]).toStrictEqual(buildEntityState([entity]));
     });
 
-    expect(store.getState()[type]).toStrictEqual(buildEntityState([entity]));
-  });
-
-  test("update entity in store when fetchOne action is dispatched", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    const entity = randomEntity();
-    const updatedEntity = merge(entity, {
-      attributes: {
-        ...entity.attributes,
-        title: faker.random.word(),
-      },
-    });
-    const { store } = seedMockStore(type, getAttributes, relationships, [
-      entity,
-    ]);
-
-    store.dispatch({
-      type: `${type}/fetchOne/fulfilled`,
-      payload: entity,
-    });
-
-    expect(store.getState()[type]).toStrictEqual(
-      buildEntityState([updatedEntity])
-    );
-  });
-
-  test("add/update entities to store when fetchAll action is dispatched", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    const entities = range(5).map(() => randomEntity());
-    const newEntity = randomEntity();
-    const { store } = seedMockStore(
-      type,
-      getAttributes,
-      relationships,
-      entities
-    );
-
-    store.dispatch({
-      type: `${type}/fetchAll/fulfilled`,
-      payload: [...entities, newEntity],
-    });
-
-    expect(store.getState()[type]).toStrictEqual(
-      buildEntityState([...entities, newEntity])
-    );
-  });
-
-  test("populate store when fetchAllBelongingTo action is dispatched", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    const entities = range(5).map(() => randomEntity());
-    const { store } = seedMockStore(type, getAttributes, relationships, []);
-    expect(store.getState()[type]).toStrictEqual(emptyEntityState());
-    const entityState = buildEntityState(entities);
-
-    store.dispatch({
-      type: `${type}/fetchAllBelongingTo/fulfilled`,
-      payload: entities,
-    });
-
-    expect(store.getState()[type]).toStrictEqual(entityState);
-  });
-
-  test("add entity to store when add action is dispatched", async () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    const entity = randomEntity();
-    const { store } = seedMockStore(type, getAttributes, relationships, []);
-    expect(store.getState()[type]).toStrictEqual(emptyEntityState());
-
-    store.dispatch({
-      type: `${type}/add/fulfilled`,
-      payload: entity,
-    });
-
-    const { entities } = store.getState()[type];
-    expect(entities.allIDs).toStrictEqual([entity.id]);
-  });
-
-  test("update entity in store when update action is dispatched", async () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    const entity = randomEntity();
-    const { store } = seedMockStore(type, getAttributes, relationships, [
-      entity,
-    ]);
-    const updatedAttributes = merge(entity.attributes, {
-      title: faker.random.words(3),
-    });
-    const updatedEntity = merge(entity, {
-      attributes: updatedAttributes,
-    });
-
-    store.dispatch({
-      type: `${type}/update/fulfilled`,
-      payload: updatedEntity,
-    });
-
-    const { entities } = store.getState()[type];
-    expect(entities.byID[entity.id]).toStrictEqual(entity);
-  });
-
-  test("delete entity from store when delete action is dispatched", async () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    const entity = randomEntity();
-    const { store } = seedMockStore(type, getAttributes, relationships, [
-      entity,
-    ]);
-
-    store.dispatch({
-      type: `${type}/delete/fulfilled`,
-      payload: entity,
-    });
-
-    const { entities } = store.getState()[type];
-    expect(entities.byID[entity.id]).toBeUndefined();
-    expect(entities.allIDs).toHaveLength(0);
-  });
-
-  test("delete all entities when clear action is dispatched for owner entity", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    assert(relationships.belongsTo !== undefined);
-    const belongsToType = relationships.belongsTo.type;
-    const belongsToKey = relationships.belongsTo.foreignKey;
-    const owner1ID = randomID();
-    const ownee1 = randomEntity();
-    const owner2ID = randomID();
-    const ownee2 = randomEntity();
-    ownee1.relationships[belongsToKey] = [owner1ID];
-    ownee2.relationships[belongsToKey] = [owner2ID];
-    const { store } = seedMockStore(type, getAttributes, relationships, [
-      ownee1,
-      ownee2,
-    ]);
-
-    store.dispatch({
-      type: `${belongsToType}/clear`,
-    });
-
-    const { entities } = store.getState()[type];
-    expect(entities.byID).toStrictEqual({});
-    expect(entities.allIDs).toStrictEqual([]);
-  });
-
-  test("delete entity when delete action is dispatched for owner entity", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    assert(relationships.belongsTo !== undefined);
-    const belongsToType = relationships.belongsTo.type;
-    const belongsToKey = relationships.belongsTo.foreignKey;
-    const belongsToBPKey = relationships.belongsTo.backPopulates;
-    const owner1ID = randomID();
-    const ownee1 = randomEntity();
-    const owner2ID = randomID();
-    const ownee2 = randomEntity();
-    ownee1.relationships[belongsToKey] = [owner1ID];
-    ownee2.relationships[belongsToKey] = [owner2ID];
-    const { store } = seedMockStore(type, getAttributes, relationships, [
-      ownee1,
-      ownee2,
-    ]);
-
-    store.dispatch({
-      type: `${belongsToType}/delete/fulfilled`,
-      payload: {
-        id: owner1ID,
-        relationships: {
-          [belongsToBPKey]: [ownee1.id],
+    test("update entity in store when action type is fulfilled", () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entity = randomEntity();
+      const updatedEntity = merge(entity, {
+        attributes: {
+          ...entity.attributes,
+          title: faker.random.word(),
         },
-      },
-    });
+      });
+      const { store } = seedMockStore(type, getAttributes, relationships, [
+        entity,
+      ]);
 
-    const { entities } = store.getState()[type];
-    expect(entities.byID).toStrictEqual({
-      [ownee2.id]: ownee2,
+      store.dispatch({
+        type: `${type}/fetchOne/fulfilled`,
+        payload: entity,
+      });
+
+      expect(store.getState()[type]).toStrictEqual(
+        buildEntityState([updatedEntity])
+      );
     });
-    expect(entities.allIDs).toStrictEqual([ownee2.id]);
   });
 
-  test("add ownee keys when set action is dispatched for ownee entity", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    assert(relationships.hasMany !== undefined);
-    const hasManyType = relationships.hasMany[0].type;
-    const hasManyKey = relationships.hasMany[0].foreignKey;
-    const hasManyBPKey = relationships.hasMany[0].backPopulates;
-    const ownee1ID = randomID();
-    const owner1 = randomEntity();
-    const ownee2ID = randomID();
-    const owner2 = randomEntity();
-    const { store } = seedMockStore(type, getAttributes, relationships, [
-      owner1,
-      owner2,
-    ]);
+  describe("<type>/fetchAll", () => {
+    test("add/update entities to store when action type is fulfilled", () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entities = range(5).map(() => randomEntity());
+      const newEntity = randomEntity();
+      const { store } = seedMockStore(
+        type,
+        getAttributes,
+        relationships,
+        entities
+      );
 
-    store.dispatch({
-      type: `${hasManyType}/set`,
-      payload: buildEntityState([
-        {
+      store.dispatch({
+        type: `${type}/fetchAll/fulfilled`,
+        payload: [...entities, newEntity],
+      });
+
+      expect(store.getState()[type]).toStrictEqual(
+        buildEntityState([...entities, newEntity])
+      );
+    });
+  });
+
+  describe("<type>/fetchAllBelongingTo", () => {
+    test("populate store when action type is fulfilled", () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entities = range(5).map(() => randomEntity());
+      const { store } = seedMockStore(type, getAttributes, relationships, []);
+      expect(store.getState()[type]).toStrictEqual(emptyEntityState());
+      const entityState = buildEntityState(entities);
+
+      store.dispatch({
+        type: `${type}/fetchAllBelongingTo/fulfilled`,
+        payload: entities,
+      });
+
+      expect(store.getState()[type]).toStrictEqual(entityState);
+    });
+  });
+
+  describe("<type>/add", () => {
+    test("add entity to store when action type is fulfilled", async () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entity = randomEntity();
+      const { store } = seedMockStore(type, getAttributes, relationships, []);
+      expect(store.getState()[type]).toStrictEqual(emptyEntityState());
+
+      store.dispatch({
+        type: `${type}/add/fulfilled`,
+        payload: entity,
+      });
+
+      const { entities } = store.getState()[type];
+      expect(entities.allIDs).toStrictEqual([entity.id]);
+    });
+  });
+
+  describe("<type>/update", () => {
+    test("update entity in store action type is fulfilled", async () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entity = randomEntity();
+      const { store } = seedMockStore(type, getAttributes, relationships, [
+        entity,
+      ]);
+      const updatedAttributes = merge(entity.attributes, {
+        title: faker.random.words(3),
+      });
+      const updatedEntity = merge(entity, {
+        attributes: updatedAttributes,
+      });
+
+      store.dispatch({
+        type: `${type}/update/fulfilled`,
+        payload: updatedEntity,
+      });
+
+      const { entities } = store.getState()[type];
+      expect(entities.byID[entity.id]).toStrictEqual(entity);
+    });
+  });
+
+  describe("<type>/delete", () => {
+    test("delete entity from store when action type is fulfilled", async () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entity = randomEntity();
+      const { store } = seedMockStore(type, getAttributes, relationships, [
+        entity,
+      ]);
+
+      store.dispatch({
+        type: `${type}/delete/fulfilled`,
+        payload: entity,
+      });
+
+      const { entities } = store.getState()[type];
+      expect(entities.byID[entity.id]).toBeUndefined();
+      expect(entities.allIDs).toHaveLength(0);
+    });
+  });
+
+  describe("<owner-type>/clear", () => {
+    test("delete all entities when owners are deleted", () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      assert(relationships.belongsTo !== undefined);
+      const belongsToType = relationships.belongsTo.type;
+      const belongsToKey = relationships.belongsTo.foreignKey;
+      const owner1ID = randomID();
+      const ownee1 = randomEntity();
+      const owner2ID = randomID();
+      const ownee2 = randomEntity();
+      ownee1.relationships[belongsToKey] = [owner1ID];
+      ownee2.relationships[belongsToKey] = [owner2ID];
+      const { store } = seedMockStore(type, getAttributes, relationships, [
+        ownee1,
+        ownee2,
+      ]);
+
+      store.dispatch({
+        type: `${belongsToType}/clear`,
+      });
+
+      const { entities } = store.getState()[type];
+      expect(entities.byID).toStrictEqual({});
+      expect(entities.allIDs).toStrictEqual([]);
+    });
+  });
+
+  describe("<owner-type>/delete", () => {
+    test("delete entities belonging to deleted owner", () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      assert(relationships.belongsTo !== undefined);
+      const belongsToType = relationships.belongsTo.type;
+      const belongsToKey = relationships.belongsTo.foreignKey;
+      const belongsToBPKey = relationships.belongsTo.backPopulates;
+      const owner1ID = randomID();
+      const ownee1 = randomEntity();
+      const owner2ID = randomID();
+      const ownee2 = randomEntity();
+      ownee1.relationships[belongsToKey] = [owner1ID];
+      ownee2.relationships[belongsToKey] = [owner2ID];
+      const { store } = seedMockStore(type, getAttributes, relationships, [
+        ownee1,
+        ownee2,
+      ]);
+
+      store.dispatch({
+        type: `${belongsToType}/delete/fulfilled`,
+        payload: {
+          id: owner1ID,
+          relationships: {
+            [belongsToBPKey]: [ownee1.id],
+          },
+        },
+      });
+
+      const { entities } = store.getState()[type];
+      expect(entities.byID).toStrictEqual({
+        [ownee2.id]: ownee2,
+      });
+      expect(entities.allIDs).toStrictEqual([ownee2.id]);
+    });
+  });
+
+  describe("<ownee-type>/set", () => {
+    test("add ownee keys", () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      assert(relationships.hasMany !== undefined);
+      const hasManyType = relationships.hasMany[0].type;
+      const hasManyKey = relationships.hasMany[0].foreignKey;
+      const hasManyBPKey = relationships.hasMany[0].backPopulates;
+      const ownee1ID = randomID();
+      const owner1 = randomEntity();
+      const ownee2ID = randomID();
+      const owner2 = randomEntity();
+      const { store } = seedMockStore(type, getAttributes, relationships, [
+        owner1,
+        owner2,
+      ]);
+
+      store.dispatch({
+        type: `${hasManyType}/set`,
+        payload: buildEntityState([
+          {
+            id: ownee1ID,
+            created: "",
+            changed: "",
+            attributes: {},
+            relationships: {
+              [hasManyBPKey]: owner1.id,
+            },
+          },
+          {
+            id: ownee2ID,
+            created: "",
+            changed: "",
+            attributes: {},
+            relationships: {
+              [hasManyBPKey]: owner2.id,
+            },
+          },
+        ]),
+      });
+
+      const { entities } = store.getState()[type];
+      expect(entities.byID[owner1.id].relationships[hasManyKey]).toStrictEqual([
+        ownee1ID,
+      ]);
+      expect(entities.byID[owner2.id].relationships[hasManyKey]).toStrictEqual([
+        ownee2ID,
+      ]);
+    });
+  });
+
+  describe("<ownee-type>/add", () => {
+    test("add ownee key", () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      assert(relationships.hasMany !== undefined);
+      const hasManyType = relationships.hasMany[0].type;
+      const hasManyKey = relationships.hasMany[0].foreignKey;
+      const hasManyBPKey = relationships.hasMany[0].backPopulates;
+      const ownee1ID = randomID();
+      const owner1 = randomEntity();
+      const owner2 = randomEntity();
+      const { store } = seedMockStore(type, getAttributes, relationships, [
+        owner1,
+        owner2,
+      ]);
+
+      store.dispatch({
+        type: `${hasManyType}/add/fulfilled`,
+        payload: {
           id: ownee1ID,
           created: "",
           changed: "",
-          attributes: {},
           relationships: {
             [hasManyBPKey]: owner1.id,
           },
         },
-        {
-          id: ownee2ID,
-          created: "",
-          changed: "",
-          attributes: {},
+      });
+
+      const { entities } = store.getState()[type];
+      expect(entities.byID[owner1.id].relationships[hasManyKey]).toStrictEqual([
+        ownee1ID,
+      ]);
+      expect(entities.byID[owner2.id].relationships[hasManyKey]).toStrictEqual(
+        []
+      );
+    });
+  });
+
+  describe("<ownee-type>/clear", () => {
+    test("delete all ownee keys", async () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      assert(relationships.hasMany !== undefined);
+      const hasManyType = relationships.hasMany[0].type;
+      const hasManyKey = relationships.hasMany[0].foreignKey;
+      const ownee1ID = randomID();
+      const owner1 = randomEntity();
+      const ownee2ID = randomID();
+      const owner2 = randomEntity();
+      owner1.relationships[hasManyKey] = [ownee1ID];
+      owner2.relationships[hasManyKey] = [ownee2ID];
+      const { store } = seedMockStore(type, getAttributes, relationships, [
+        owner1,
+        owner2,
+      ]);
+
+      store.dispatch({
+        type: `${hasManyType}/clear`,
+      });
+
+      const { entities } = store.getState()[type];
+      expect(entities.byID[owner1.id].relationships[hasManyKey]).toStrictEqual(
+        []
+      );
+      expect(entities.byID[owner2.id].relationships[hasManyKey]).toStrictEqual(
+        []
+      );
+    });
+  });
+
+  describe("<ownee-type>/delete", () => {
+    test("delete ownee key", async () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      assert(relationships.hasMany !== undefined);
+      const hasManyType = relationships.hasMany[0].type;
+      const hasManyKey = relationships.hasMany[0].foreignKey;
+      const hasManyBPKey = relationships.hasMany[0].backPopulates;
+      const ownee1ID = randomID();
+      const owner1 = randomEntity();
+      const ownee2ID = randomID();
+      const owner2 = randomEntity();
+      owner1.relationships[hasManyKey] = [ownee1ID];
+      owner2.relationships[hasManyKey] = [ownee2ID];
+      const { store } = seedMockStore(type, getAttributes, relationships, [
+        owner1,
+        owner2,
+      ]);
+
+      store.dispatch({
+        type: `${hasManyType}/delete/fulfilled`,
+        payload: {
+          id: ownee1ID,
           relationships: {
-            [hasManyBPKey]: owner2.id,
+            [hasManyBPKey]: owner1.id,
           },
         },
-      ]),
+      });
+
+      const { entities } = store.getState()[type];
+      expect(entities.byID[owner1.id].relationships[hasManyKey]).toStrictEqual(
+        []
+      );
+      expect(entities.byID[owner2.id].relationships[hasManyKey]).toStrictEqual([
+        ownee2ID,
+      ]);
     });
-
-    const { entities } = store.getState()[type];
-    expect(entities.byID[owner1.id].relationships[hasManyKey]).toStrictEqual([
-      ownee1ID,
-    ]);
-    expect(entities.byID[owner2.id].relationships[hasManyKey]).toStrictEqual([
-      ownee2ID,
-    ]);
-  });
-
-  test("add ownee key when add action is dispatched for ownee entity", () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    assert(relationships.hasMany !== undefined);
-    const hasManyType = relationships.hasMany[0].type;
-    const hasManyKey = relationships.hasMany[0].foreignKey;
-    const hasManyBPKey = relationships.hasMany[0].backPopulates;
-    const ownee1ID = randomID();
-    const owner1 = randomEntity();
-    const owner2 = randomEntity();
-    const { store } = seedMockStore(type, getAttributes, relationships, [
-      owner1,
-      owner2,
-    ]);
-
-    store.dispatch({
-      type: `${hasManyType}/add/fulfilled`,
-      payload: {
-        id: ownee1ID,
-        created: "",
-        changed: "",
-        relationships: {
-          [hasManyBPKey]: owner1.id,
-        },
-      },
-    });
-
-    const { entities } = store.getState()[type];
-    expect(entities.byID[owner1.id].relationships[hasManyKey]).toStrictEqual([
-      ownee1ID,
-    ]);
-    expect(entities.byID[owner2.id].relationships[hasManyKey]).toStrictEqual(
-      []
-    );
-  });
-
-  test("delete all ownee keys when clear action is dispatched for ownee entity", async () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    assert(relationships.hasMany !== undefined);
-    const hasManyType = relationships.hasMany[0].type;
-    const hasManyKey = relationships.hasMany[0].foreignKey;
-    const ownee1ID = randomID();
-    const owner1 = randomEntity();
-    const ownee2ID = randomID();
-    const owner2 = randomEntity();
-    owner1.relationships[hasManyKey] = [ownee1ID];
-    owner2.relationships[hasManyKey] = [ownee2ID];
-    const { store } = seedMockStore(type, getAttributes, relationships, [
-      owner1,
-      owner2,
-    ]);
-
-    store.dispatch({
-      type: `${hasManyType}/clear`,
-    });
-
-    const { entities } = store.getState()[type];
-    expect(entities.byID[owner1.id].relationships[hasManyKey]).toStrictEqual(
-      []
-    );
-    expect(entities.byID[owner2.id].relationships[hasManyKey]).toStrictEqual(
-      []
-    );
-  });
-
-  test("delete ownee key when delete action is dispatched for ownee entity", async () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
-    assert(relationships.hasMany !== undefined);
-    const hasManyType = relationships.hasMany[0].type;
-    const hasManyKey = relationships.hasMany[0].foreignKey;
-    const hasManyBPKey = relationships.hasMany[0].backPopulates;
-    const ownee1ID = randomID();
-    const owner1 = randomEntity();
-    const ownee2ID = randomID();
-    const owner2 = randomEntity();
-    owner1.relationships[hasManyKey] = [ownee1ID];
-    owner2.relationships[hasManyKey] = [ownee2ID];
-    const { store } = seedMockStore(type, getAttributes, relationships, [
-      owner1,
-      owner2,
-    ]);
-
-    store.dispatch({
-      type: `${hasManyType}/delete/fulfilled`,
-      payload: {
-        id: ownee1ID,
-        relationships: {
-          [hasManyBPKey]: owner1.id,
-        },
-      },
-    });
-
-    const { entities } = store.getState()[type];
-    expect(entities.byID[owner1.id].relationships[hasManyKey]).toStrictEqual(
-      []
-    );
-    expect(entities.byID[owner2.id].relationships[hasManyKey]).toStrictEqual([
-      ownee2ID,
-    ]);
   });
 });
