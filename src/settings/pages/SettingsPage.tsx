@@ -77,7 +77,7 @@ const SettingsPage = () => {
       <Messages />
       <div className="container">
         {settingsStoreError && (
-          <Alert variant="danger">{settingsStoreError}</Alert>
+          <Alert variant="danger">{settingsStoreError.message}</Alert>
         )}
         {formError && <Alert variant="danger">{formError}</Alert>}
         <SettingsForm

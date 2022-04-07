@@ -16,6 +16,12 @@ import {
 } from "store/types";
 import { getCSRFCookie } from "datastore";
 
+export class EntityNotFoundException extends Error {
+  constructor(type: string, id: string) {
+    super(`Not found: ${type}/${id}`);
+  }
+}
+
 export const fetchEntity = async <
   T extends string,
   A extends EntityAttributes,

@@ -34,6 +34,7 @@ export const emptyEntityState = <T>() =>
       allIDs: [],
     },
     status: "idle",
+    error: null,
   } as EntityState<T>);
 
 export const buildEntityState = <
@@ -245,7 +246,7 @@ export const createEntitySlice = <
         })
         .addMatcher(isRejected, (state, action) => {
           state.status = "rejected";
-          state.error = action.error.message;
+          state.error = action.error;
         });
     },
   });

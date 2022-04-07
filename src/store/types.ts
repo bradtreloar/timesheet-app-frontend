@@ -1,3 +1,5 @@
+import { PayloadAction, SerializedError } from "@reduxjs/toolkit";
+
 export type StoreStatus = "idle" | "pending" | "fulfilled" | "rejected";
 
 export interface Timestamps {
@@ -46,5 +48,19 @@ export interface EntityStateData<T> {
 export interface EntityState<T> {
   entities: EntityStateData<T>;
   status: StoreStatus;
-  error?: string;
+  error: SerializedError | null;
 }
+
+export type RejectedAction = PayloadAction<
+  unknown,
+  string,
+  {
+    arg: unknown;
+    requestId: string;
+    rejectedWithValue: boolean;
+    requestStatus: "rejected";
+    aborted: boolean;
+    condition: boolean;
+  },
+  SerializedError
+>;
