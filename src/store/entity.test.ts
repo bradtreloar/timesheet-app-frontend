@@ -408,17 +408,44 @@ describe("reducer", () => {
     const entity = randomEntity();
     const { store } = seedMockStore(type, getAttributes, relationships, []);
     expect(store.getState()[type]).toStrictEqual(emptyEntityState());
-    const entityState = buildEntityState([entity]);
 
     store.dispatch({
       type: `${type}/fetchOne/fulfilled`,
       payload: entity,
     });
 
-    expect(store.getState()[type]).toStrictEqual(entityState);
+    expect(store.getState()[type]).toStrictEqual(buildEntityState([entity]));
   });
 
-  test("populate store when fetchAll action is dispatched", () => {
+  test("update entity in store when fetchOne action is dispatched", () => {
+    const {
+      type,
+      getAttributes,
+      relationships,
+      randomEntity,
+    } = mockEntityType();
+    const entity = randomEntity();
+    const updatedEntity = merge(entity, {
+      attributes: {
+        ...entity.attributes,
+        title: faker.random.word(),
+      },
+    });
+    const { store } = seedMockStore(type, getAttributes, relationships, [
+      entity,
+    ]);
+
+    store.dispatch({
+      type: `${type}/fetchOne/fulfilled`,
+      payload: entity,
+    });
+
+    expect(store.getState()[type]).toStrictEqual(
+      buildEntityState([updatedEntity])
+    );
+  });
+
+  test("add/update entities to store when fetchAll action is dispatched", () => {
     const {
       type,
       getAttributes,
@@ -426,16 +453,22 @@ describe("reducer", () => {
       randomEntity,
     } = mockEntityType();
     const entities = range(5).map(() => randomEntity());
-    const { store } = seedMockStore(type, getAttributes, relationships, []);
-    expect(store.getState()[type]).toStrictEqual(emptyEntityState());
-    const entityState = buildEntityState(entities);
+    const newEntity = randomEntity();
+    const { store } = seedMockStore(
+      type,
+      getAttributes,
+      relationships,
+      entities
+    );
 
     store.dispatch({
       type: `${type}/fetchAll/fulfilled`,
-      payload: entities,
+      payload: [...entities, newEntity],
     });
 
-    expect(store.getState()[type]).toStrictEqual(entityState);
+    expect(store.getState()[type]).toStrictEqual(
+      buildEntityState([...entities, newEntity])
+    );
   });
 
   test("populate store when fetchAllBelongingTo action is dispatched", () => {
