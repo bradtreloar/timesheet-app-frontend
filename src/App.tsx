@@ -23,12 +23,10 @@ import { useThunkDispatch } from "store/createStore";
 import { actions as timesheetActions } from "timesheets/store/timesheets";
 import { actions as settingsActions } from "settings/store/settings";
 import { actions as userActions } from "users/store/users";
-import assert from "assert";
 import { CurrentUser } from "auth/types";
 
 const initialiseStore = async (user: CurrentUser) => {
   const dispatch = useThunkDispatch();
-  assert(timesheetActions.fetchAllBelongingTo !== null);
   dispatch(timesheetActions.fetchAllBelongingTo(user.id));
   dispatch(settingsActions.fetchAll());
   if (user.isAdmin) {

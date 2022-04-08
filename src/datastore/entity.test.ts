@@ -156,12 +156,7 @@ describe("fetchEntitiesBelongingTo", () => {
   });
 
   test("rejects with EntityNotFoundException", async () => {
-    const {
-      type,
-      getAttributes,
-      relationships,
-      randomEntity,
-    } = mockEntityType();
+    const { type, getAttributes, relationships } = mockEntityType();
     const ownerType = (relationships.belongsTo as EntityRelationship).type;
     const ownerID = randomID();
     const url = `/${ownerType}/${ownerID}`;

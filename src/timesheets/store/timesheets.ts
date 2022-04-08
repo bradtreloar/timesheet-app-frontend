@@ -1,3 +1,4 @@
+import { AsyncThunk } from "@reduxjs/toolkit";
 import { createEntitySlice } from "store/entity";
 import { Entity, EntityState } from "store/types";
 import { getEntryDate } from "timesheets/helpers";
@@ -87,5 +88,19 @@ export const selectTimesheetEntries = (timesheet: Timesheet) => (state: {
   return entries;
 };
 
-export const { actions } = timesheets;
+export const actions = timesheets.actions as typeof timesheets.actions & {
+  fetchAllBelongingTo: AsyncThunk<
+    Entity<TimesheetAttributes, TimesheetKeys>[],
+    string,
+    {}
+  >;
+  addBelongingTo: AsyncThunk<
+    Entity<TimesheetAttributes, TimesheetKeys>,
+    {
+      attributes: TimesheetAttributes;
+      belongsToID: string;
+    },
+    {}
+  >;
+};
 export default timesheets;

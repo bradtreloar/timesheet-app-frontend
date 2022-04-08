@@ -17,7 +17,6 @@ import { Button } from "react-bootstrap";
 import { useMessages } from "messages/context";
 import { actions as userActions } from "users/store/users";
 import { useThunkDispatch } from "store/createStore";
-import assert from "assert";
 import {
   AbsenceAttributes,
   ShiftAttributes,
@@ -46,7 +45,6 @@ const TimesheetFormPage = () => {
     absencesAttributes: AbsenceAttributes[];
     comment: string;
   }>(async ({ shiftsAttributes, absencesAttributes, comment }) => {
-    assert(timesheetActions.addBelongingTo !== null);
     const addTimesheetAction = await dispatch(
       timesheetActions.addBelongingTo({
         attributes: { comment, submitted: null },

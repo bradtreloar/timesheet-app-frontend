@@ -6,13 +6,13 @@ import {
 } from "./adapters";
 import { EntityResource, Filters } from "./types";
 import { jsonAPIClient } from "datastore/clients";
-import assert from "assert";
 import {
   Entity,
   EntityAttributes,
   EntityAttributesGetter,
   EntityKeys,
   EntityRelationships,
+  OwneeEntityRelationships,
 } from "store/types";
 import { getCSRFCookie, UnknownError } from "datastore";
 import { BaseException } from "utils/exceptions";
@@ -79,11 +79,10 @@ export const fetchEntitiesBelongingTo = async <
 >(
   type: T,
   attributesGetter: EntityAttributesGetter<A>,
-  relationships: EntityRelationships,
+  relationships: OwneeEntityRelationships,
   belongsToID: string
 ): Promise<Entity<A, K>[]> => {
   const { belongsTo } = relationships;
-  assert(belongsTo !== undefined);
   try {
     const response: AxiosResponse<{
       data: EntityResource<T, A>[];
@@ -128,12 +127,11 @@ export const createEntityBelongingTo = async <
 >(
   type: T,
   attributesGetter: EntityAttributesGetter<A>,
-  relationships: EntityRelationships,
+  relationships: OwneeEntityRelationships,
   belongsToID: string,
   attributes: A
 ): Promise<Entity<A, K>> => {
   const { belongsTo } = relationships;
-  assert(belongsTo !== undefined);
   await getCSRFCookie();
   const resource = makeNewEntityResource(type, attributes);
   try {

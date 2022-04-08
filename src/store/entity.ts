@@ -25,6 +25,7 @@ import {
   EntityRelationships,
   EntityState,
   EntityStateData,
+  OwneeEntityRelationships,
 } from "./types";
 
 export const emptyEntityState = <T>() =>
@@ -300,7 +301,7 @@ export const createAsyncEntityActions = <
               await fetchEntitiesBelongingTo<T, A, K>(
                 entityType,
                 attributesGetter,
-                relationships,
+                relationships as OwneeEntityRelationships,
                 belongsToID
               )
           )
@@ -329,7 +330,7 @@ export const createAsyncEntityActions = <
               await createEntityBelongingTo<T, A, K>(
                 entityType,
                 attributesGetter,
-                relationships,
+                relationships as OwneeEntityRelationships,
                 belongsToID,
                 attributes
               )

@@ -17,7 +17,6 @@ import {
   ShiftAttributes,
   Timesheet,
 } from "timesheets/types";
-import assert from "assert";
 import { AsyncThunk, createAsyncThunk } from "@reduxjs/toolkit";
 import { DateTime } from "luxon";
 import { Entity, EntityAttributes, EntityKeys } from "store/types";

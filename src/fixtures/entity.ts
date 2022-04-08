@@ -6,7 +6,7 @@ import {
   EntityAttributes,
   EntityKeys,
   EntityRelationship,
-  EntityRelationships,
+  OwnerOwneeEntityRelationships,
 } from "store/types";
 import { randomID } from "./random";
 
@@ -20,7 +20,7 @@ export interface MockEntityKeys extends EntityKeys {
 
 export type MockEntity = Entity<MockEntityAttributes, {}>;
 
-export const mockEntityRelationships = (): EntityRelationships => {
+export const mockEntityRelationships = (): OwnerOwneeEntityRelationships => {
   return {
     belongsTo: {
       type: "mockParentEntities",

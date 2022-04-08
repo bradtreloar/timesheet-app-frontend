@@ -29,10 +29,23 @@ export interface EntityRelationship {
   backPopulates: string;
 }
 
-export type EntityRelationships = {
+export interface EntityRelationships {
   belongsTo?: EntityRelationship;
   hasMany?: EntityRelationship[];
-};
+}
+
+export interface OwneeEntityRelationships extends EntityRelationships {
+  belongsTo: EntityRelationship;
+}
+
+export interface OwnerEntityRelationships extends EntityRelationships {
+  hasMany: EntityRelationship[];
+}
+
+export interface OwnerOwneeEntityRelationships extends EntityRelationships {
+  belongsTo: EntityRelationship;
+  hasMany: EntityRelationship[];
+}
 
 export type EntityAttributesGetter<A> = (attributes: any) => A;
 
