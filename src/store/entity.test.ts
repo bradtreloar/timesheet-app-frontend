@@ -1,4 +1,4 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, createAsyncThunk } from "@reduxjs/toolkit";
 import faker from "faker";
 import { merge, range } from "lodash";
 import {
@@ -12,12 +12,14 @@ import {
   EntityAttributes,
   EntityAttributesGetter,
   EntityKeys,
+  EntityRelationship,
   EntityRelationships,
   RejectedAction,
 } from "./types";
 import { randomID } from "fixtures/random";
 import assert from "assert";
 import { mockEntityType } from "fixtures/entity";
+import { BaseException } from "utils/exceptions";
 
 const createMockStore = <A>(
   mockEntitytype: string,
@@ -156,12 +158,7 @@ describe("asynchronous thunk actions", () => {
 
     test(`rejects with EntityNotFoundException error`, async () => {
       const id = faker.random.uuid();
-      const {
-        type,
-        getAttributes,
-        relationships,
-        randomEntity,
-      } = mockEntityType();
+      const { type, getAttributes, relationships } = mockEntityType();
       const { actions, store } = seedMockStore(
         type,
         getAttributes,
@@ -253,6 +250,44 @@ describe("asynchronous thunk actions", () => {
       expect(action.type).toBe(`${type}/fetchAllBelongingTo/fulfilled`);
       expect(action.payload).toStrictEqual([entity]);
     });
+
+    test("rejects with EntityNotFoundException error", async () => {
+      const { type, getAttributes, relationships } = mockEntityType();
+      const parentEntityID = randomID();
+      const parentEntityType = (relationships.belongsTo as EntityRelationship)
+        .type;
+      const { actions, store } = seedMockStore(
+        type,
+        getAttributes,
+        relationships,
+        []
+      );
+      jest
+        .spyOn(entityDatastore, "fetchEntitiesBelongingTo")
+        .mockRejectedValue(
+          new entityDatastore.EntityNotFoundException(
+            parentEntityType,
+            parentEntityID
+          )
+        );
+      assert(actions.fetchAllBelongingTo !== null);
+
+      const action = (await store.dispatch(
+        actions.fetchAllBelongingTo(parentEntityID)
+      )) as RejectedAction;
+
+      expect(entityDatastore.fetchEntitiesBelongingTo).toHaveBeenCalledWith(
+        type,
+        getAttributes,
+        relationships,
+        parentEntityID
+      );
+      expect(action.type).toBe(`${type}/fetchAllBelongingTo/rejected`);
+      expect(action.error.name).toBe("EntityNotFoundException");
+      expect(action.error.message).toBe(
+        `Not found: ${parentEntityType}/${parentEntityID}`
+      );
+    });
   });
 
   describe("add", () => {
@@ -333,6 +368,54 @@ describe("asynchronous thunk actions", () => {
       expect(action.type).toBe(`${type}/addBelongingTo/fulfilled`);
       expect(action.payload).toStrictEqual(entity);
     });
+
+    test("rejects with EntityNotFoundException error", async () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entity = randomEntity();
+      const parentEntityID = randomID();
+      const parentEntityType = (relationships.belongsTo as EntityRelationship)
+        .type;
+      const { actions, store } = seedMockStore(
+        type,
+        getAttributes,
+        relationships,
+        []
+      );
+      jest
+        .spyOn(entityDatastore, "createEntityBelongingTo")
+        .mockRejectedValue(
+          new entityDatastore.EntityNotFoundException(
+            parentEntityType,
+            parentEntityID
+          )
+        );
+      assert(actions.addBelongingTo !== null);
+
+      const action = (await store.dispatch(
+        actions.addBelongingTo({
+          belongsToID: parentEntityID,
+          attributes: entity.attributes,
+        })
+      )) as RejectedAction;
+
+      expect(entityDatastore.createEntityBelongingTo).toHaveBeenCalledWith(
+        type,
+        getAttributes,
+        relationships,
+        parentEntityID,
+        entity.attributes
+      );
+      expect(action.type).toBe(`${type}/addBelongingTo/rejected`);
+      expect(action.error.name).toBe("EntityNotFoundException");
+      expect(action.error.message).toBe(
+        `Not found: ${parentEntityType}/${parentEntityID}`
+      );
+    });
   });
 
   describe("update", () => {
@@ -363,6 +446,41 @@ describe("asynchronous thunk actions", () => {
       expect(action.type).toBe(`${type}/update/fulfilled`);
       expect(action.payload).toBe(entity);
     });
+
+    test("rejects with EntityNotFoundException error", async () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entity = randomEntity();
+      const { actions, store } = seedMockStore(
+        type,
+        getAttributes,
+        relationships,
+        []
+      );
+      jest
+        .spyOn(entityDatastore, "updateEntity")
+        .mockRejectedValue(
+          new entityDatastore.EntityNotFoundException(type, entity.id)
+        );
+
+      const action = (await store.dispatch(
+        actions.update(entity)
+      )) as RejectedAction;
+
+      expect(entityDatastore.updateEntity).toHaveBeenCalledWith(
+        type,
+        getAttributes,
+        relationships,
+        entity
+      );
+      expect(action.type).toBe(`${type}/update/rejected`);
+      expect(action.error.name).toBe("EntityNotFoundException");
+      expect(action.error.message).toBe(`Not found: ${type}/${entity.id}`);
+    });
   });
 
   describe("delete", () => {
@@ -388,10 +506,63 @@ describe("asynchronous thunk actions", () => {
       expect(action.type).toBe(`${type}/delete/fulfilled`);
       expect(action.payload).toBe(entity);
     });
+
+    test("rejects with EntityNotFoundException error", async () => {
+      const {
+        type,
+        getAttributes,
+        relationships,
+        randomEntity,
+      } = mockEntityType();
+      const entity = randomEntity();
+      const { actions, store } = seedMockStore(
+        type,
+        getAttributes,
+        relationships,
+        []
+      );
+      jest
+        .spyOn(entityDatastore, "deleteEntity")
+        .mockRejectedValue(
+          new entityDatastore.EntityNotFoundException(type, entity.id)
+        );
+
+      const action = (await store.dispatch(
+        actions.delete(entity)
+      )) as RejectedAction;
+
+      expect(entityDatastore.deleteEntity).toHaveBeenCalledWith(type, entity);
+      expect(action.type).toBe(`${type}/delete/rejected`);
+      expect(action.error.name).toBe("EntityNotFoundException");
+      expect(action.error.message).toBe(`Not found: ${type}/${entity.id}`);
+    });
   });
 });
 
 describe("reducer", () => {
+  test("sets error when async thunk action rejects", async () => {
+    const { type: entityType, getAttributes, relationships } = mockEntityType();
+    const { store } = createMockStore(entityType, getAttributes, relationships);
+    const actionType = `${entityType}/${faker.random.alpha()}`;
+    const errorMessage = faker.random.words();
+    const error = new BaseException(errorMessage);
+    const serializedError = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+
+    await store.dispatch(
+      createAsyncThunk(actionType, async () => {
+        throw error;
+      })()
+    );
+
+    const entityState = store.getState()[entityType];
+    expect(entityState.status).toBe("rejected");
+    expect(entityState.error).toStrictEqual(serializedError);
+  });
+
   describe("<type>/set", () => {
     test("populate store when set action is dispatched", () => {
       const {

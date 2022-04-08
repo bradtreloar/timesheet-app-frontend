@@ -14,7 +14,7 @@ import {
   EntityKeys,
   EntityRelationships,
 } from "store/types";
-import { getCSRFCookie } from "datastore";
+import { getCSRFCookie, UnknownError } from "datastore";
 import { BaseException } from "utils/exceptions";
 
 export class EntityNotFoundException extends BaseException {
@@ -33,11 +33,18 @@ export const fetchEntity = async <
   attributesGetter: EntityAttributesGetter<A>,
   relationships: EntityRelationships
 ) => {
-  const response: AxiosResponse<{
-    data: EntityResource<T, A>;
-  }> = await jsonAPIClient.get(`/${type}/${id}`);
-  const { data } = response.data;
-  return parseEntity<T, A, K>(attributesGetter, relationships, data);
+  try {
+    const response: AxiosResponse<{
+      data: EntityResource<T, A>;
+    }> = await jsonAPIClient.get(`/${type}/${id}`);
+    const { data } = response.data;
+    return parseEntity<T, A, K>(attributesGetter, relationships, data);
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      throw new EntityNotFoundException(type, id);
+    }
+  }
+  throw new UnknownError();
 };
 
 export const fetchEntities = async <
@@ -77,13 +84,20 @@ export const fetchEntitiesBelongingTo = async <
 ): Promise<Entity<A, K>[]> => {
   const { belongsTo } = relationships;
   assert(belongsTo !== undefined);
-  const response: AxiosResponse<{
-    data: EntityResource<T, A>[];
-  }> = await jsonAPIClient.get(`/${belongsTo.type}/${belongsToID}/${type}`);
-  const { data } = response.data;
-  return data.map((resource) => {
-    return parseEntity<T, A, K>(attributesGetter, relationships, resource);
-  });
+  try {
+    const response: AxiosResponse<{
+      data: EntityResource<T, A>[];
+    }> = await jsonAPIClient.get(`/${belongsTo.type}/${belongsToID}/${type}`);
+    const { data } = response.data;
+    return data.map((resource) => {
+      return parseEntity<T, A, K>(attributesGetter, relationships, resource);
+    });
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      throw new EntityNotFoundException(type, belongsToID);
+    }
+  }
+  throw new UnknownError();
 };
 
 export const createEntity = async <
@@ -122,13 +136,20 @@ export const createEntityBelongingTo = async <
   assert(belongsTo !== undefined);
   await getCSRFCookie();
   const resource = makeNewEntityResource(type, attributes);
-  const response: AxiosResponse<{
-    data: EntityResource<T, A>;
-  }> = await jsonAPIClient.post(`/${belongsTo.type}/${belongsToID}/${type}`, {
-    data: resource,
-  });
-  const { data } = response.data;
-  return parseEntity<T, A, K>(attributesGetter, relationships, data);
+  try {
+    const response: AxiosResponse<{
+      data: EntityResource<T, A>;
+    }> = await jsonAPIClient.post(`/${belongsTo.type}/${belongsToID}/${type}`, {
+      data: resource,
+    });
+    const { data } = response.data;
+    return parseEntity<T, A, K>(attributesGetter, relationships, data);
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      throw new EntityNotFoundException(type, belongsToID);
+    }
+  }
+  throw new UnknownError();
 };
 
 export const updateEntity = async <
@@ -143,13 +164,20 @@ export const updateEntity = async <
 ): Promise<Entity<A, K>> => {
   await getCSRFCookie();
   const resource = makeEntityResource(type, relationships, entity);
-  const response: AxiosResponse<{
-    data: EntityResource<T, A>;
-  }> = await jsonAPIClient.patch(`/${type}/${entity.id}`, {
-    data: resource,
-  });
-  const { data } = response.data;
-  return parseEntity<T, A, K>(attributesGetter, relationships, data);
+  try {
+    const response: AxiosResponse<{
+      data: EntityResource<T, A>;
+    }> = await jsonAPIClient.patch(`/${type}/${entity.id}`, {
+      data: resource,
+    });
+    const { data } = response.data;
+    return parseEntity<T, A, K>(attributesGetter, relationships, data);
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      throw new EntityNotFoundException(type, entity.id);
+    }
+  }
+  throw new UnknownError();
 };
 
 export const deleteEntity = async <
@@ -160,7 +188,14 @@ export const deleteEntity = async <
   type: T,
   entity: Entity<A, K>
 ): Promise<Entity<A, K>> => {
-  await getCSRFCookie();
-  await jsonAPIClient.delete(`/${type}/${entity.id}`);
-  return entity;
+  try {
+    await getCSRFCookie();
+    await jsonAPIClient.delete(`/${type}/${entity.id}`);
+    return entity;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      throw new EntityNotFoundException(type, entity.id);
+    }
+  }
+  throw new UnknownError();
 };

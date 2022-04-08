@@ -1,10 +1,11 @@
 import { client, jsonAPIClient } from "datastore/clients";
 import MockAdapter from "axios-mock-adapter";
-import { randomDateTime } from "fixtures/random";
+import { randomDateTime, randomID } from "fixtures/random";
 import {
   createEntity,
   createEntityBelongingTo,
   deleteEntity,
+  EntityNotFoundException,
   fetchEntities,
   fetchEntitiesBelongingTo,
   fetchEntity,
@@ -52,6 +53,22 @@ describe("fetchEntity", () => {
     expect(history.get.length).toBe(1);
     expect(history.get[0].url).toBe(url);
     expect(result).toStrictEqual(entity);
+  });
+
+  test("rejects with EntityNotFoundException", async () => {
+    const {
+      type,
+      getAttributes,
+      relationships,
+      randomEntity,
+    } = mockEntityType();
+    const entity = randomEntity();
+    const url = `/${type}/${entity.id}`;
+    mockJsonAPIClient.onGet(url).reply(404);
+
+    expect(
+      fetchEntity(type, entity.id, getAttributes, relationships)
+    ).rejects.toThrow(EntityNotFoundException);
   });
 });
 
@@ -119,8 +136,8 @@ describe("fetchEntitiesBelongingTo", () => {
     } = mockEntityType();
     const entity = randomEntity();
     const belongsTo = relationships.belongsTo as EntityRelationship;
-    const belongsToID = entity.relationships[belongsTo.foreignKey] as string;
-    const url = `/${belongsTo.type}/${belongsToID}/${type}`;
+    const ownerID = entity.relationships[belongsTo.foreignKey] as string;
+    const url = `/${belongsTo.type}/${ownerID}/${type}`;
     mockJsonAPIClient.onGet(url).reply(200, {
       data: [makeEntityResource(type, relationships, entity)],
     });
@@ -129,13 +146,30 @@ describe("fetchEntitiesBelongingTo", () => {
       type,
       getAttributes,
       relationships,
-      belongsToID
+      ownerID
     );
 
     const history = mockJsonAPIClient.history;
     expect(history.get.length).toBe(1);
     expect(history.get[0].url).toBe(url);
     expect(result).toStrictEqual([entity]);
+  });
+
+  test("rejects with EntityNotFoundException", async () => {
+    const {
+      type,
+      getAttributes,
+      relationships,
+      randomEntity,
+    } = mockEntityType();
+    const ownerType = (relationships.belongsTo as EntityRelationship).type;
+    const ownerID = randomID();
+    const url = `/${ownerType}/${ownerID}`;
+    mockJsonAPIClient.onGet(url).reply(404);
+
+    expect(
+      fetchEntitiesBelongingTo(type, getAttributes, relationships, ownerID)
+    ).rejects.toThrow(EntityNotFoundException);
   });
 });
 
@@ -177,8 +211,8 @@ describe("createEntityBelongingTo", () => {
     } = mockEntityType();
     const entity = randomEntity();
     const belongsTo = relationships.belongsTo as EntityRelationship;
-    const belongsToID = entity.relationships[belongsTo.foreignKey] as string;
-    const url = `/${belongsTo.type}/${belongsToID}/${type}`;
+    const ownerID = entity.relationships[belongsTo.foreignKey] as string;
+    const url = `/${belongsTo.type}/${ownerID}/${type}`;
     mockJsonAPIClient.onPost(url).reply(200, {
       data: makeEntityResource(type, relationships, entity),
     });
@@ -187,7 +221,7 @@ describe("createEntityBelongingTo", () => {
       type,
       getAttributes,
       relationships,
-      belongsToID,
+      ownerID,
       entity.attributes
     );
 
@@ -195,6 +229,30 @@ describe("createEntityBelongingTo", () => {
     expect(history.post.length).toBe(1);
     expect(history.post[0].url).toBe(url);
     expect(result).toStrictEqual(entity);
+  });
+
+  test("rejects with EntityNotFoundException", async () => {
+    const {
+      type,
+      getAttributes,
+      relationships,
+      randomEntity,
+    } = mockEntityType();
+    const entity = randomEntity();
+    const belongsTo = relationships.belongsTo as EntityRelationship;
+    const ownerID = entity.relationships[belongsTo.foreignKey] as string;
+    const url = `/${belongsTo.type}/${ownerID}/${type}`;
+    mockJsonAPIClient.onPost(url).reply(404);
+
+    expect(
+      createEntityBelongingTo(
+        type,
+        getAttributes,
+        relationships,
+        ownerID,
+        entity.attributes
+      )
+    ).rejects.toThrow(EntityNotFoundException);
   });
 });
 
@@ -224,6 +282,22 @@ describe("updateEntity", () => {
     expect(history.patch[0].url).toBe(url);
     expect(result).toStrictEqual(entity);
   });
+
+  test("rejects with EntityNotFoundException", async () => {
+    const {
+      type,
+      getAttributes,
+      relationships,
+      randomEntity,
+    } = mockEntityType();
+    const entity = randomEntity();
+    const url = `/${type}/${entity.id}`;
+    mockJsonAPIClient.onPost(url).reply(404);
+
+    expect(
+      updateEntity(type, getAttributes, relationships, entity)
+    ).rejects.toThrow(EntityNotFoundException);
+  });
 });
 
 describe("deleteEntity", () => {
@@ -241,5 +315,14 @@ describe("deleteEntity", () => {
     expect(history.delete.length).toBe(1);
     expect(history.delete[0].url).toBe(url);
     expect(result).toStrictEqual(entity);
+  });
+
+  test("rejects with EntityNotFoundException", async () => {
+    const { type, randomEntity } = mockEntityType();
+    const entity = randomEntity();
+    const url = `/${type}/${entity.id}`;
+    mockJsonAPIClient.onPost(url).reply(404);
+
+    expect(deleteEntity(type, entity)).rejects.toThrow(EntityNotFoundException);
   });
 });

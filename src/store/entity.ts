@@ -243,6 +243,7 @@ export const createEntitySlice = <
       builder
         .addMatcher(isPending, (state) => {
           state.status = "pending";
+          state.error = null;
         })
         .addMatcher(isRejected, (state, action) => {
           state.status = "rejected";
