@@ -7,4 +7,6 @@ export class UnknownError extends BaseException {
   }
 }
 
-export const getCSRFCookie = () => client.get("/csrf-cookie");
+export const getCSRFCookie = () => {
+  client.get("/csrf-cookie");
+};

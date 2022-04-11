@@ -23,6 +23,32 @@ export class EntityNotFoundException extends BaseException {
   }
 }
 
+export class UnauthorizedEntityRequestException extends BaseException {
+  constructor(type: string, id: string) {
+    super(`Access Denied: ${type}/${id}`);
+  }
+}
+
+export class UnauthenticatedEntityRequestException extends BaseException {
+  constructor(type: string, id: string) {
+    super(`Access Denied: ${type}/${id}`);
+  }
+}
+
+const handleResponseError = (type: string, id: string, error: any) => {
+  const status = error.response?.status;
+  if (status === 401) {
+    throw new UnauthenticatedEntityRequestException(type, id);
+  }
+  if (status === 403) {
+    throw new UnauthorizedEntityRequestException(type, id);
+  }
+  if (status === 404) {
+    throw new EntityNotFoundException(type, id);
+  }
+  throw new UnknownError();
+};
+
 export const fetchEntity = async <
   T extends string,
   A extends EntityAttributes,
@@ -40,11 +66,8 @@ export const fetchEntity = async <
     const { data } = response.data;
     return parseEntity<T, A, K>(attributesGetter, relationships, data);
   } catch (error: any) {
-    if (error.response?.status === 404) {
-      throw new EntityNotFoundException(type, id);
-    }
+    handleResponseError(type, id, error);
   }
-  throw new UnknownError();
 };
 
 export const fetchEntities = async <
@@ -92,9 +115,7 @@ export const fetchEntitiesBelongingTo = async <
       return parseEntity<T, A, K>(attributesGetter, relationships, resource);
     });
   } catch (error: any) {
-    if (error.response?.status === 404) {
-      throw new EntityNotFoundException(type, belongsToID);
-    }
+    handleResponseError(type, belongsToID, error);
   }
   throw new UnknownError();
 };
@@ -143,9 +164,7 @@ export const createEntityBelongingTo = async <
     const { data } = response.data;
     return parseEntity<T, A, K>(attributesGetter, relationships, data);
   } catch (error: any) {
-    if (error.response?.status === 404) {
-      throw new EntityNotFoundException(type, belongsToID);
-    }
+    handleResponseError(type, belongsToID, error);
   }
   throw new UnknownError();
 };
@@ -171,9 +190,7 @@ export const updateEntity = async <
     const { data } = response.data;
     return parseEntity<T, A, K>(attributesGetter, relationships, data);
   } catch (error: any) {
-    if (error.response?.status === 404) {
-      throw new EntityNotFoundException(type, entity.id);
-    }
+    handleResponseError(type, entity.id, error);
   }
   throw new UnknownError();
 };
@@ -191,9 +208,7 @@ export const deleteEntity = async <
     await jsonAPIClient.delete(`/${type}/${entity.id}`);
     return entity;
   } catch (error: any) {
-    if (error.response?.status === 404) {
-      throw new EntityNotFoundException(type, entity.id);
-    }
+    handleResponseError(type, entity.id, error);
   }
   throw new UnknownError();
 };

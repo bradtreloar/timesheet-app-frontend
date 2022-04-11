@@ -1,7 +1,10 @@
-import { client, jsonAPIClient } from "datastore/clients";
+import { jsonAPIClient } from "datastore/clients";
 import MockAdapter from "axios-mock-adapter";
 import { randomDateTime, randomID } from "fixtures/random";
+import * as datastore from "datastore";
 import {
+  UnauthenticatedEntityRequestException,
+  UnauthorizedEntityRequestException,
   createEntity,
   createEntityBelongingTo,
   deleteEntity,
@@ -13,18 +16,15 @@ import {
 } from "datastore/entity";
 import { mockEntityType } from "fixtures/entity";
 import { makeEntityResource } from "./adapters";
-import { EntityRelationship } from "store/types";
 
-const mockClient = new MockAdapter(client);
 const mockJsonAPIClient = new MockAdapter(jsonAPIClient);
 
 beforeEach(() => {
-  mockClient.onGet("/csrf-cookie").reply(204);
+  jest.spyOn(datastore, "getCSRFCookie");
 });
 
 afterEach(() => {
   jest.resetAllMocks();
-  mockClient.reset();
   mockJsonAPIClient.reset();
 });
 
@@ -38,7 +38,7 @@ describe("fetchEntity", () => {
     } = mockEntityType();
     const entity = randomEntity();
     const url = `/${type}/${entity.id}`;
-    mockJsonAPIClient.onGet(url).reply(200, {
+    mockJsonAPIClient.onGet(url).replyOnce(200, {
       data: makeEntityResource(type, relationships, entity),
     });
 
@@ -55,7 +55,7 @@ describe("fetchEntity", () => {
     expect(result).toStrictEqual(entity);
   });
 
-  test("rejects with EntityNotFoundException", async () => {
+  function testException(status: number, expectedError: any) {
     const {
       type,
       getAttributes,
@@ -64,11 +64,23 @@ describe("fetchEntity", () => {
     } = mockEntityType();
     const entity = randomEntity();
     const url = `/${type}/${entity.id}`;
-    mockJsonAPIClient.onGet(url).reply(404);
+    mockJsonAPIClient.onGet(url).replyOnce(status);
 
     expect(
       fetchEntity(type, entity.id, getAttributes, relationships)
-    ).rejects.toThrow(EntityNotFoundException);
+    ).rejects.toThrow(expectedError);
+  }
+
+  test("rejects with UnauthenticatedEntityRequestException when error 401", () => {
+    testException(401, UnauthenticatedEntityRequestException);
+  });
+
+  test("rejects with UnauthorizedEntityRequestException when error 403", () => {
+    testException(403, UnauthorizedEntityRequestException);
+  });
+
+  test("rejects with EntityNotFoundException when error 404", async () => {
+    testException(404, EntityNotFoundException);
   });
 });
 
@@ -82,7 +94,7 @@ describe("fetchEntities", () => {
     } = mockEntityType();
     const entity = randomEntity();
     const url = `/${type}`;
-    mockJsonAPIClient.onGet(url).reply(200, {
+    mockJsonAPIClient.onGet(url).replyOnce(200, {
       data: [makeEntityResource(type, relationships, entity)],
     });
 
@@ -108,7 +120,7 @@ describe("fetchEntities", () => {
       .onGet(url, {
         "filter[updated-after]": date.toISO(),
       })
-      .reply(200, {
+      .replyOnce(200, {
         data: [makeEntityResource(type, relationships, entity)],
       });
 
@@ -135,10 +147,10 @@ describe("fetchEntitiesBelongingTo", () => {
       randomEntity,
     } = mockEntityType();
     const entity = randomEntity();
-    const belongsTo = relationships.belongsTo as EntityRelationship;
+    const belongsTo = relationships.belongsTo;
     const ownerID = entity.relationships[belongsTo.foreignKey] as string;
     const url = `/${belongsTo.type}/${ownerID}/${type}`;
-    mockJsonAPIClient.onGet(url).reply(200, {
+    mockJsonAPIClient.onGet(url).replyOnce(200, {
       data: [makeEntityResource(type, relationships, entity)],
     });
 
@@ -155,16 +167,28 @@ describe("fetchEntitiesBelongingTo", () => {
     expect(result).toStrictEqual([entity]);
   });
 
-  test("rejects with EntityNotFoundException", async () => {
+  function testException(status: number, expectedError: any) {
     const { type, getAttributes, relationships } = mockEntityType();
-    const ownerType = (relationships.belongsTo as EntityRelationship).type;
+    const ownerType = relationships.belongsTo.type;
     const ownerID = randomID();
-    const url = `/${ownerType}/${ownerID}`;
-    mockJsonAPIClient.onGet(url).reply(404);
+    const url = `/${ownerType}/${ownerID}/${type}`;
+    mockJsonAPIClient.onGet(url).replyOnce(status);
 
     expect(
       fetchEntitiesBelongingTo(type, getAttributes, relationships, ownerID)
-    ).rejects.toThrow(EntityNotFoundException);
+    ).rejects.toThrow(expectedError);
+  }
+
+  test("rejects with UnauthenticatedEntityRequestException when error 401", () => {
+    testException(401, UnauthenticatedEntityRequestException);
+  });
+
+  test("rejects with UnauthorizedEntityRequestException when error 403", async () => {
+    testException(403, UnauthorizedEntityRequestException);
+  });
+
+  test("rejects with EntityNotFoundException when error 404", async () => {
+    testException(404, EntityNotFoundException);
   });
 });
 
@@ -178,7 +202,7 @@ describe("createEntity", () => {
     } = mockEntityType();
     const entity = randomEntity();
     const url = `/${type}`;
-    mockJsonAPIClient.onPost(url).reply(200, {
+    mockJsonAPIClient.onPost(url).replyOnce(200, {
       data: makeEntityResource(type, relationships, entity),
     });
 
@@ -205,10 +229,10 @@ describe("createEntityBelongingTo", () => {
       randomEntity,
     } = mockEntityType();
     const entity = randomEntity();
-    const belongsTo = relationships.belongsTo as EntityRelationship;
+    const belongsTo = relationships.belongsTo;
     const ownerID = entity.relationships[belongsTo.foreignKey] as string;
     const url = `/${belongsTo.type}/${ownerID}/${type}`;
-    mockJsonAPIClient.onPost(url).reply(200, {
+    mockJsonAPIClient.onPost(url).replyOnce(200, {
       data: makeEntityResource(type, relationships, entity),
     });
 
@@ -226,7 +250,7 @@ describe("createEntityBelongingTo", () => {
     expect(result).toStrictEqual(entity);
   });
 
-  test("rejects with EntityNotFoundException", async () => {
+  function testException(status: number, expectedError: any) {
     const {
       type,
       getAttributes,
@@ -234,10 +258,10 @@ describe("createEntityBelongingTo", () => {
       randomEntity,
     } = mockEntityType();
     const entity = randomEntity();
-    const belongsTo = relationships.belongsTo as EntityRelationship;
+    const belongsTo = relationships.belongsTo;
     const ownerID = entity.relationships[belongsTo.foreignKey] as string;
     const url = `/${belongsTo.type}/${ownerID}/${type}`;
-    mockJsonAPIClient.onPost(url).reply(404);
+    mockJsonAPIClient.onPost(url).replyOnce(status);
 
     expect(
       createEntityBelongingTo(
@@ -247,7 +271,19 @@ describe("createEntityBelongingTo", () => {
         ownerID,
         entity.attributes
       )
-    ).rejects.toThrow(EntityNotFoundException);
+    ).rejects.toThrow(expectedError);
+  }
+
+  test("rejects with UnauthenticatedEntityRequestException when error 401", () => {
+    testException(401, UnauthenticatedEntityRequestException);
+  });
+
+  test("rejects with UnauthorizedEntityRequestException when error 403", async () => {
+    testException(403, UnauthorizedEntityRequestException);
+  });
+
+  test("rejects with EntityNotFoundException when error 404", async () => {
+    testException(404, EntityNotFoundException);
   });
 });
 
@@ -261,7 +297,7 @@ describe("updateEntity", () => {
     } = mockEntityType();
     const entity = randomEntity();
     const url = `/${type}/${entity.id}`;
-    mockJsonAPIClient.onPatch(url).reply(200, {
+    mockJsonAPIClient.onPatch(url).replyOnce(200, {
       data: makeEntityResource(type, relationships, entity),
     });
 
@@ -278,7 +314,7 @@ describe("updateEntity", () => {
     expect(result).toStrictEqual(entity);
   });
 
-  test("rejects with EntityNotFoundException", async () => {
+  function testException(status: number, expectedError: any) {
     const {
       type,
       getAttributes,
@@ -287,11 +323,23 @@ describe("updateEntity", () => {
     } = mockEntityType();
     const entity = randomEntity();
     const url = `/${type}/${entity.id}`;
-    mockJsonAPIClient.onPost(url).reply(404);
+    mockJsonAPIClient.onPost(url).replyOnce(status);
 
     expect(
       updateEntity(type, getAttributes, relationships, entity)
-    ).rejects.toThrow(EntityNotFoundException);
+    ).rejects.toThrow(expectedError);
+  }
+
+  test("rejects with UnauthenticatedEntityRequestException when error 401", () => {
+    testException(401, UnauthenticatedEntityRequestException);
+  });
+
+  test("rejects with UnauthorizedEntityRequestException when error 403", async () => {
+    testException(403, UnauthorizedEntityRequestException);
+  });
+
+  test("rejects with EntityNotFoundException when error 404", async () => {
+    testException(404, EntityNotFoundException);
   });
 });
 
@@ -300,7 +348,7 @@ describe("deleteEntity", () => {
     const { type, relationships, randomEntity } = mockEntityType();
     const entity = randomEntity();
     const url = `/${type}/${entity.id}`;
-    mockJsonAPIClient.onDelete(url).reply(200, {
+    mockJsonAPIClient.onDelete(url).replyOnce(200, {
       data: makeEntityResource(type, relationships, entity),
     });
 
@@ -312,12 +360,24 @@ describe("deleteEntity", () => {
     expect(result).toStrictEqual(entity);
   });
 
-  test("rejects with EntityNotFoundException", async () => {
+  function testException(status: number, expectedError: any) {
     const { type, randomEntity } = mockEntityType();
     const entity = randomEntity();
     const url = `/${type}/${entity.id}`;
-    mockJsonAPIClient.onPost(url).reply(404);
+    mockJsonAPIClient.onDelete(url).replyOnce(status);
 
-    expect(deleteEntity(type, entity)).rejects.toThrow(EntityNotFoundException);
+    expect(deleteEntity(type, entity)).rejects.toThrow(expectedError);
+  }
+
+  test("rejects with UnauthenticatedEntityRequestException when error 401", () => {
+    testException(401, UnauthenticatedEntityRequestException);
+  });
+
+  test("rejects with UnauthorizedEntityRequestException when error 403", async () => {
+    testException(403, UnauthorizedEntityRequestException);
+  });
+
+  test("rejects with EntityNotFoundException when error 404", async () => {
+    testException(404, EntityNotFoundException);
   });
 });
