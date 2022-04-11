@@ -3,6 +3,7 @@ import {
   createAsyncThunk,
   createSlice,
   Draft,
+  isFulfilled,
   isPending,
   isRejected,
   PayloadAction,
@@ -37,6 +38,9 @@ export const emptyEntityState = <T>() =>
     status: "idle",
     error: null,
   } as EntityState<T>);
+
+export const entityStateIsIdle = <T>(state: EntityState<T>) =>
+  ["idle", "fulfilled"].includes(state.status);
 
 export const buildEntityState = <
   A extends EntityAttributes,
@@ -242,6 +246,9 @@ export const createEntitySlice = <
       }
 
       builder
+        .addMatcher(isFulfilled, (state) => {
+          state.status = "fulfilled";
+        })
         .addMatcher(isPending, (state) => {
           state.status = "pending";
           state.error = null;
