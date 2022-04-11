@@ -55,39 +55,6 @@ export class UndefinedEntryException extends BaseException {
   }
 }
 
-export const selectTimesheetEntries = (timesheet: Timesheet) => (state: {
-  shifts: EntityState<Shift>;
-  absences: EntityState<Absence>;
-}) => {
-  const entries = [] as Entry[];
-
-  timesheet.relationships.shifts.forEach((id) => {
-    const entry = state.shifts.entities.byID[id];
-    if (entry !== undefined) {
-      entries.push(entry);
-    } else {
-      throw new UndefinedEntryException(id);
-    }
-  });
-
-  timesheet.relationships.absences.forEach((id) => {
-    const entry = state.absences.entities.byID[id];
-    if (entry !== undefined) {
-      entries.push(entry);
-    } else {
-      throw new UndefinedEntryException(id);
-    }
-  });
-
-  entries.sort((a, b) => {
-    const aDate = getEntryDate(a);
-    const bDate = getEntryDate(b);
-    return aDate.diff(bDate).toMillis();
-  });
-
-  return entries;
-};
-
 export const actions = timesheets.actions as typeof timesheets.actions & {
   fetchAllBelongingTo: AsyncThunk<
     Entity<TimesheetAttributes, TimesheetKeys>[],
