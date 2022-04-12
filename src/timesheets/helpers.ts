@@ -1,11 +1,14 @@
 import { DateTime } from "luxon";
+import { EntityState } from "store/types";
 import { Time } from "utils/date";
 import {
   Absence,
   AbsenceAttributes,
+  Entry,
   Shift,
   ShiftAttributes,
   ShiftValues,
+  Timesheet,
 } from "./types";
 
 /**
@@ -46,4 +49,42 @@ export const getEntryDate = (entry: Shift | Absence) => {
       ? (attributes as AbsenceAttributes).date
       : (attributes as ShiftAttributes).start;
   return DateTime.fromISO(date);
+};
+
+export const isMissingShifts = (
+  timesheet: Timesheet,
+  shiftsState: EntityState<Shift>
+) => {
+  const timesheetShiftIDs = timesheet.relationships.shifts;
+  const allShiftIDs = shiftsState.entities.allIDs;
+  return !timesheetShiftIDs.every((id) => allShiftIDs.includes(id));
+};
+
+export const isMissingAbsences = (
+  timesheet: Timesheet,
+  absencesState: EntityState<Absence>
+) => {
+  const timesheetAbsenceIDs = timesheet.relationships.absences;
+  const allAbsenceIDs = absencesState.entities.allIDs;
+  return !timesheetAbsenceIDs.every((id) => allAbsenceIDs.includes(id));
+};
+
+export const getTimesheetEntries = (
+  timesheet: Timesheet,
+  shiftsState: EntityState<Shift>,
+  absencesState: EntityState<Absence>
+) => {
+  const entries = [] as Entry[];
+  timesheet.relationships.shifts.forEach((id) => {
+    entries.push(shiftsState.entities.byID[id]);
+  });
+  timesheet.relationships.absences.forEach((id) => {
+    entries.push(absencesState.entities.byID[id]);
+  });
+  entries.sort((a: Entry, b: Entry) => {
+    const aDate = getEntryDate(a);
+    const bDate = getEntryDate(b);
+    return aDate.diff(bDate).toMillis();
+  });
+  return entries;
 };
