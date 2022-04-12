@@ -58,7 +58,7 @@ export const fetchEntity = async <
   id: string,
   attributesGetter: EntityAttributesGetter<A>,
   relationships: EntityRelationships
-) => {
+): Promise<Entity<A, K>> => {
   try {
     const response: AxiosResponse<{
       data: EntityResource<T, A>;
@@ -68,6 +68,7 @@ export const fetchEntity = async <
   } catch (error: any) {
     handleResponseError(type, id, error);
   }
+  throw new UnknownError();
 };
 
 export const fetchEntities = async <
@@ -203,12 +204,11 @@ export const deleteEntity = async <
   type: T,
   entity: Entity<A, K>
 ): Promise<Entity<A, K>> => {
+  await getCSRFCookie();
   try {
-    await getCSRFCookie();
     await jsonAPIClient.delete(`/${type}/${entity.id}`);
-    return entity;
   } catch (error: any) {
     handleResponseError(type, entity.id, error);
   }
-  throw new UnknownError();
+  return entity;
 };
