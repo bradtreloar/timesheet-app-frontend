@@ -28,7 +28,7 @@ import { DateTime } from "luxon";
 const TimesheetFormPage = () => {
   const dispatch = useThunkDispatch();
   const { user, logout, updateUser } = useAuth();
-  const { setMessage } = useMessages();
+  const { setMessage, dismissMessagesByTag } = useMessages();
   const history = useHistory();
   const { error } = useSelector(selectTimesheets);
 
@@ -93,7 +93,13 @@ const TimesheetFormPage = () => {
       <>
         <p>Your timesheet has been submitted.</p>
         <p>A copy has been emailed to you at {user?.email}</p>
-        <Button variant="outline-dark" onClick={logout}>
+        <Button
+          variant="outline-dark"
+          onClick={async () => {
+            await logout();
+            dismissMessagesByTag("timesheet-form");
+          }}
+        >
           Click here to log out
         </Button>
       </>,
