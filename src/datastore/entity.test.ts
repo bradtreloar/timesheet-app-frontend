@@ -323,7 +323,7 @@ describe("updateEntity", () => {
     } = mockEntityType();
     const entity = randomEntity();
     const url = `/${type}/${entity.id}`;
-    mockJsonAPIClient.onPost(url).replyOnce(status);
+    mockJsonAPIClient.onPatch(url).replyOnce(status);
 
     expect(
       updateEntity(type, getAttributes, relationships, entity)
