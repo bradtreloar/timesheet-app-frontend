@@ -2,6 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import {
   randomCurrentUser,
   randomSettings,
+  randomTimesheet,
   randomTimesheets,
 } from "fixtures/random";
 import { DateTime } from "luxon";
@@ -16,6 +17,7 @@ import { buildEntityState } from "store/entity";
 import { AuthContextValue } from "auth/context";
 import { MockAuthProvider } from "fixtures/auth";
 import { MessagesProvider } from "messages/context";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 
 const Fixture: React.FC<{
   authContextValue: Partial<AuthContextValue>;
@@ -42,7 +44,11 @@ test("renders timesheet index page", async () => {
   const settings = randomSettings();
   const store = createStore();
   store.dispatch(settingsActions.set(buildEntityState(settings)));
-  store.dispatch(timesheetActions.set(buildEntityState(timesheets)));
+  jest
+    .spyOn(timesheetActions, "fetchAll")
+    .mockImplementation(
+      createAsyncThunk("timesheets/fetchAll", () => Promise.resolve(timesheets))
+    );
 
   await act(async () => {
     render(
@@ -64,4 +70,34 @@ test("renders timesheet index page", async () => {
       )
     );
   });
+});
+
+it("fetches timesheets on mount when none in store", async () => {
+  const user = randomCurrentUser();
+  const timesheet = randomTimesheet(user);
+  const store = createStore();
+  jest
+    .spyOn(timesheetActions, "fetchAll")
+    .mockImplementation(
+      createAsyncThunk("timesheets/fetchAll", () =>
+        Promise.resolve([timesheet])
+      )
+    );
+
+  await act(async () => {
+    render(
+      <Fixture
+        authContextValue={{
+          isAuthenticated: true,
+          user,
+        }}
+        store={store}
+      />
+    );
+  });
+
+  expect(timesheetActions.fetchAll).toHaveBeenCalled();
+  expect(store.getState().timesheets.entities).toStrictEqual(
+    buildEntityState([timesheet]).entities
+  );
 });

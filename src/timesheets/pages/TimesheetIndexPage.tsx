@@ -1,19 +1,51 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import PageTitle from "common/layouts/PageTitle";
 import DefaultLayout from "common/layouts/DefaultLayout";
 import { Link } from "react-router-dom";
 import TimesheetTable from "timesheets/TimesheetTable";
 import { useSelector } from "react-redux";
-import { selectTimesheets } from "timesheets/store/timesheets";
+import {
+  selectTimesheets,
+  actions as timesheetActions,
+} from "timesheets/store/timesheets";
 import Messages from "messages/Messages";
-import { values } from "lodash";
+import { Timesheet } from "timesheets/types";
+import { entityStateIsIdle } from "store/entity";
+import { useThunkDispatch } from "store/createStore";
+import LoadingPage from "common/pages/LoadingPage";
+
+const useTimesheets = () => {
+  const dispatch = useThunkDispatch();
+  const [isRefreshed, setRefreshed] = useState(false);
+  const [timesheets, setTimesheets] = useState<Timesheet[] | null>(null);
+  const timesheetsState = useSelector(selectTimesheets);
+
+  useEffect(() => {
+    if (entityStateIsIdle(timesheetsState)) {
+      if (!isRefreshed) {
+        (async () => {
+          await dispatch(timesheetActions.fetchAll());
+          setRefreshed(true);
+        })();
+      } else {
+        const { entities } = timesheetsState;
+        setTimesheets(entities.allIDs.map((id) => entities.byID[id]));
+      }
+    }
+  }, [isRefreshed, timesheetsState]);
+
+  return {
+    timesheets,
+    error: timesheetsState.error,
+  };
+};
 
 const TimesheetIndexPage = () => {
-  const { entities, status: timesheetStoreStatus } = useSelector(
-    selectTimesheets
-  );
+  const { timesheets } = useTimesheets();
 
-  const timesheets = useMemo(() => values(entities.byID), [entities]);
+  if (timesheets === null) {
+    return <LoadingPage />;
+  }
 
   return (
     <DefaultLayout>
@@ -25,9 +57,7 @@ const TimesheetIndexPage = () => {
             Create new timesheet
           </Link>
         </div>
-        {timesheetStoreStatus === "pending" ? (
-          <p>Loading...</p>
-        ) : timesheets.length > 0 ? (
+        {timesheets.length > 0 ? (
           <TimesheetTable timesheets={timesheets} />
         ) : (
           <p>You don't have any timesheets, yet.</p>
