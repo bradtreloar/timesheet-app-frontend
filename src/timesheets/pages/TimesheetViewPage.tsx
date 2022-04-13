@@ -30,8 +30,7 @@ import { entityStateIsIdle } from "store/entity";
 const useTimesheet = (id: string) => {
   const dispatch = useThunkDispatch();
   const timesheetsState = useSelector(selectTimesheets);
-  const shiftsState = useSelector(selectShifts);
-  const absencesState = useSelector(selectAbsences);
+
   const timesheet = useMemo(() => {
     const timesheet = timesheetsState.entities.byID[id];
     return timesheet !== undefined ? timesheet : null;
@@ -46,6 +45,17 @@ const useTimesheet = (id: string) => {
       }
     }
   }, [timesheetsState]);
+
+  return {
+    timesheet,
+    error: timesheetsState.error,
+  };
+};
+
+const useTimesheetEntries = (timesheet: Timesheet | null) => {
+  const dispatch = useThunkDispatch();
+  const shiftsState = useSelector(selectShifts);
+  const absencesState = useSelector(selectAbsences);
 
   const entries = useMemo(() => {
     if (timesheet !== null) {
@@ -79,19 +89,25 @@ const useTimesheet = (id: string) => {
     }
   }, [timesheet, absencesState]);
 
+  return entries;
+};
+
+const useTimesheetAndEntries = (id: string) => {
+  const { timesheet, error } = useTimesheet(id);
+  const entries = useTimesheetEntries(timesheet);
+
   return {
     timesheet,
     entries,
-    error: timesheetsState.error,
+    error,
   };
 };
 
 const TimesheetViewPage: React.FC = () => {
-  const dispatch = useThunkDispatch();
   const { id } = useParams<{
     id: string;
   }>();
-  const { timesheet, entries, error } = useTimesheet(id);
+  const { timesheet, entries, error } = useTimesheetAndEntries(id);
 
   if (error !== null) {
     if (error.name === "EntityNotFoundException") {
