@@ -20,9 +20,10 @@ const timesheets = createEntitySlice<
   TimesheetKeys
 >(
   "timesheets",
-  ({ comment, submitted }: any): TimesheetAttributes => ({
+  ({ comment, submitted, emailSent }: any): TimesheetAttributes => ({
     comment,
     submitted,
+    emailSent,
   }),
   {
     belongsTo: {

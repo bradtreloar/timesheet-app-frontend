@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route } from "react-router-dom";
 import {
   randomCurrentUser,
-  randomReason,
   randomSettings,
   randomShift,
   randomTimesheet,
@@ -21,7 +20,6 @@ import createStore, { AppStore } from "store/createStore";
 import { buildEntityState } from "store/entity";
 import { ShiftValues } from "timesheets/types";
 import { MessagesProvider } from "messages/context";
-import { CurrentUser } from "auth/types";
 import { Time } from "utils/date";
 import { MockAuthProvider } from "fixtures/auth";
 import { AuthContextValue } from "auth/context";
@@ -104,6 +102,7 @@ test("renders timesheet page", async () => {
 test("handles timesheet submission", async () => {
   const store = createMockStore();
   const { user, timesheet, shifts } = getFixtures();
+  timesheet.attributes.emailSent = null;
 
   const addTimesheetBelongingToSpy = jest
     // @ts-ignore
@@ -152,6 +151,7 @@ test("handles timesheet submission", async () => {
     attributes: {
       comment: timesheet.attributes.comment,
       submitted: null,
+      emailSent: null,
     },
     belongsToID: user.id,
   });

@@ -47,7 +47,11 @@ const TimesheetFormPage = () => {
   }>(async ({ shiftsAttributes, absencesAttributes, comment }) => {
     const addTimesheetAction = await dispatch(
       timesheetActions.addBelongingTo({
-        attributes: { comment, submitted: null },
+        attributes: {
+          comment,
+          submitted: null,
+          emailSent: null,
+        },
         belongsToID: user.id,
       })
     );
@@ -81,6 +85,7 @@ const TimesheetFormPage = () => {
           attributes: {
             comment: timesheet.attributes.comment,
             submitted: DateTime.now().toISO(),
+            emailSent: null,
           },
         })
       )

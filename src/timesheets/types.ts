@@ -7,6 +7,7 @@ export type Reason = keyof typeof reasons;
 export interface TimesheetAttributes extends EntityAttributes {
   comment: string;
   submitted: string | null;
+  emailSent: string | null;
 }
 
 export interface TimesheetKeys extends EntityKeys {

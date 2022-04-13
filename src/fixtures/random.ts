@@ -179,6 +179,7 @@ export const randomTimesheet = (
     attributes: {
       comment: Randomstring.generate(60),
       submitted: DateTime.local().toISO(),
+      emailSent: DateTime.local().toISO(),
     },
     relationships: {
       user: user.id,
