@@ -7,6 +7,6 @@ export interface SettingAttributes extends EntityAttributes {
 
 export type Setting = Entity<SettingAttributes, {}>;
 
-export interface Settings {
+export interface SettingsValues {
   timesheetRecipients: string;
 }

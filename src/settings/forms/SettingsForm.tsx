@@ -1,16 +1,16 @@
 import React from "react";
 import { Button, Form } from "react-bootstrap";
 import useForm from "common/forms/useForm";
-import { Settings } from "settings/types";
+import { SettingsValues } from "settings/types";
 
 interface SettingsFormProps {
-  defaultValues: Settings;
-  onSubmit: (values: Settings) => void;
+  defaultValues: SettingsValues;
+  onSubmit: (values: SettingsValues) => void;
   pending?: boolean;
   className?: string;
 }
 
-const validate = (values: Settings) => {
+const validate = (values: SettingsValues) => {
   const { timesheetRecipients } = values;
   const errors = {} as any;
 
@@ -38,7 +38,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
     handleBlur,
     handleChange,
     handleSubmit,
-  } = useForm<Settings>(defaultValues, onSubmit, validate);
+  } = useForm<SettingsValues>(defaultValues, onSubmit, validate);
 
   return (
     <Form onSubmit={handleSubmit} className={className}>

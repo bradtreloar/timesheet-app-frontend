@@ -2,7 +2,7 @@ import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { randomSettings, randomUser } from "fixtures/random";
+import { randomCurrentUser, randomSettings, randomUser } from "fixtures/random";
 import * as entityDatastore from "datastore/entity";
 import { Provider } from "react-redux";
 import { actions as settingsActions } from "settings/store/settings";
@@ -12,12 +12,11 @@ import { buildEntityState } from "store/entity";
 import {
   getAttributes as getSettingAttributes,
   relationships as settingRelationships,
+  actions as settingActions,
 } from "settings/store/settings";
 import { MessagesProvider } from "messages/context";
 import { MockAuthProvider } from "fixtures/auth";
-
-const user = randomUser();
-const settings = randomSettings();
+import { createAsyncThunk } from "@reduxjs/toolkit";
 
 const Fixture: React.FC<{
   store: AppStore;
@@ -44,9 +43,15 @@ afterEach(() => {
   jest.resetAllMocks();
 });
 
-test("renders settings page", async () => {
+it("renders settings page", async () => {
+  const settings = randomSettings();
   const store = createStore();
   store.dispatch(settingsActions.set(buildEntityState(settings)));
+  jest
+    .spyOn(settingActions, "fetchAll")
+    .mockImplementation(
+      createAsyncThunk("settings/fetchAll", () => Promise.resolve(settings))
+    );
 
   await act(async () => {
     render(<Fixture store={store} />);
@@ -55,9 +60,15 @@ test("renders settings page", async () => {
   expect(screen.getByRole("heading")).toHaveTextContent(/settings/i);
 });
 
-test("handles SettingsForm submission", async () => {
+it("handles SettingsForm submission", async () => {
+  const settings = randomSettings();
   const store = createStore();
   store.dispatch(settingsActions.set(buildEntityState(settings)));
+  jest
+    .spyOn(settingActions, "fetchAll")
+    .mockImplementation(
+      createAsyncThunk("settings/fetchAll", () => Promise.resolve(settings))
+    );
   jest.spyOn(entityDatastore, "updateEntity").mockResolvedValue(settings[0]);
 
   await act(async () => {
@@ -76,10 +87,16 @@ test("handles SettingsForm submission", async () => {
   await screen.findByText(/settings updated/i);
 });
 
-test("displays error when settings update fails", async () => {
+it("displays error when settings update fails", async () => {
+  const settings = randomSettings();
   const store = createStore();
   store.dispatch(settingsActions.set(buildEntityState(settings)));
   const errorMessage = "unable to save settings";
+  jest
+    .spyOn(settingActions, "fetchAll")
+    .mockImplementation(
+      createAsyncThunk("settings/fetchAll", () => Promise.resolve(settings))
+    );
   jest
     .spyOn(entityDatastore, "updateEntity")
     .mockRejectedValue(new Error(errorMessage));
@@ -92,4 +109,23 @@ test("displays error when settings update fails", async () => {
     userEvent.click(screen.getByText(/^save settings$/i));
   });
   screen.getByText(errorMessage);
+});
+
+it("fetches settings on mount", async () => {
+  const settings = randomSettings();
+  const store = createStore();
+  store.dispatch(settingActions.set(buildEntityState(settings)));
+  jest
+    .spyOn(settingActions, "fetchAll")
+    .mockImplementation(
+      createAsyncThunk("settings/fetchAll", () => Promise.resolve(settings))
+    );
+
+  await act(async () => {
+    render(<Fixture store={store} />);
+  });
+
+  expect(settingActions.fetchAll).toHaveBeenCalled();
+  const { entities } = store.getState().settings;
+  expect(entities).toStrictEqual(buildEntityState(settings).entities);
 });

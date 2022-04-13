@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import PageTitle from "common/layouts/PageTitle";
 import DefaultLayout from "common/layouts/DefaultLayout";
@@ -13,34 +13,33 @@ import { useMessages } from "messages/context";
 import Messages from "messages/Messages";
 import { useThunkDispatch } from "store/createStore";
 import { EntityStateData } from "store/types";
-import { Setting, Settings } from "settings/types";
+import { Setting, SettingsValues } from "settings/types";
 import { merge } from "lodash";
+import { entityStateIsIdle } from "store/entity";
+import LoadingPage from "common/pages/LoadingPage";
 
-export function buildSettings(entities: EntityStateData<Setting>) {
+export function useSettingsValues() {
+  const { entities } = useSelector(selectSettings);
   const { allIDs: settingIDs, byID: settingsByID } = entities;
 
   return settingIDs.reduce((settings, id) => {
     const { name, value } = settingsByID[id].attributes;
-    settings[name as keyof Settings] = value;
+    settings[name as keyof SettingsValues] = value;
     return settings;
-  }, {} as Settings);
+  }, {} as SettingsValues);
 }
 
 export function getUpdatedSettings(
-  values: Settings,
-  entities: EntityStateData<Setting>
+  values: SettingsValues,
+  settings: Setting[]
 ): Setting[] {
-  const { allIDs: settingIDs, byID: settingsByID } = entities;
-
   const updatedSettings = [] as Setting[];
-  settingIDs.forEach((id) => {
-    const setting = settingsByID[id];
-    const { name, value } = setting.attributes;
-    const updatedValue = values[name as keyof Settings];
+  settings.forEach((setting) => {
+    const settingName = setting.attributes.name as keyof SettingsValues;
     updatedSettings.push(
       merge(setting, {
         attributes: merge(setting.attributes, {
-          value: updatedValue,
+          value: values[settingName],
         }),
       })
     );
@@ -48,18 +47,41 @@ export function getUpdatedSettings(
   return updatedSettings;
 }
 
+const useSettings = () => {
+  const dispatch = useThunkDispatch();
+  const [isRefreshed, setRefreshed] = useState(false);
+  const [settings, setSettings] = useState<Setting[] | null>(null);
+  const settingsState = useSelector(selectSettings);
+
+  useEffect(() => {
+    if (entityStateIsIdle(settingsState)) {
+      if (!isRefreshed) {
+        (async () => {
+          await dispatch(settingsActions.fetchAll());
+          setRefreshed(true);
+        })();
+      } else {
+        const { entities } = settingsState;
+        setSettings(entities.allIDs.map((id) => entities.byID[id]));
+      }
+    }
+  }, [isRefreshed, settingsState]);
+
+  return {
+    settings,
+    error: settingsState.error,
+  };
+};
+
 const SettingsPage = () => {
   const dispatch = useThunkDispatch();
-  const { entities, error: settingsStoreError } = useSelector(selectSettings);
   const { setMessage } = useMessages();
-
-  const settings = useMemo(() => {
-    return buildSettings(entities);
-  }, [entities]);
+  const { settings, error } = useSettings();
+  const settingsValues = useSettingsValues();
 
   const { formError, formPending, handleSubmit } = useFormController(
-    async (values: Settings) => {
-      const updatedSettings = getUpdatedSettings(values, entities);
+    async (values: SettingsValues) => {
+      const updatedSettings = getUpdatedSettings(values, settings);
 
       for (let setting of updatedSettings) {
         const action = await dispatch(settingsActions.update(setting));
@@ -71,17 +93,19 @@ const SettingsPage = () => {
     { unmountsOnSubmit: false }
   );
 
+  if (settings === null) {
+    return <LoadingPage />;
+  }
+
   return (
     <DefaultLayout>
       <PageTitle>Settings</PageTitle>
       <Messages />
       <div className="container">
-        {settingsStoreError && (
-          <Alert variant="danger">{settingsStoreError.message}</Alert>
-        )}
+        {error && <Alert variant="danger">{error.message}</Alert>}
         {formError && <Alert variant="danger">{formError}</Alert>}
         <SettingsForm
-          defaultValues={settings}
+          defaultValues={settingsValues}
           onSubmit={handleSubmit}
           pending={formPending}
         />

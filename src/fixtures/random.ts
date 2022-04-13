@@ -11,7 +11,7 @@ import {
   ShiftValues,
   Timesheet,
 } from "timesheets/types";
-import { Setting, Settings } from "settings/types";
+import { Setting, SettingsValues } from "settings/types";
 import { User } from "users/types";
 import { CurrentUser } from "auth/types";
 
@@ -193,7 +193,7 @@ export const randomTimesheets = (user: User | CurrentUser, count?: number) =>
 
 export const randomSettings = (
   settings?: {
-    [P in keyof Settings]?: string;
+    [P in keyof SettingsValues]?: string;
   }
 ): Setting[] => [
   {
@@ -207,7 +207,7 @@ export const randomSettings = (
   },
 ];
 
-export const randomSettingsObject = (): Settings => ({
+export const randomSettingsObject = (): SettingsValues => ({
   timesheetRecipients: faker.internet.email(),
 });
 
