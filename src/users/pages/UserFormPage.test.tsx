@@ -21,6 +21,7 @@ import { MockAuthProvider } from "fixtures/auth";
 import { MessagesProvider } from "messages/context";
 import UserDeletePage from "./UserDeletePage";
 import { AuthContextValue } from "auth/context";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 
 const Fixture: React.FC<{
   authContextValue: Partial<AuthContextValue>;
@@ -168,5 +169,67 @@ describe("existing user form", () => {
     expect(entities.byID).toStrictEqual({
       [updatedUser.id]: updatedUser,
     });
+  });
+
+  it("fetches user on mount", async () => {
+    const currentUser = randomCurrentUser();
+    const user = randomUser();
+    const store = createStore();
+    store.dispatch(userActions.set(buildEntityState([])));
+    jest
+      .spyOn(userActions, "fetchOne")
+      .mockImplementation(
+        createAsyncThunk(`users/fetchOne`, () => Promise.resolve(user))
+      );
+
+    await act(async () => {
+      render(
+        <Fixture
+          authContextValue={{
+            isAuthenticated: true,
+            isAdmin: true,
+            user: currentUser,
+          }}
+          store={store}
+          initialEntries={[`/users/${user.id}`]}
+          route="/users/:id"
+        />
+      );
+    });
+
+    expect(userActions.fetchOne).toHaveBeenCalledWith(user.id);
+    const { entities } = store.getState().users;
+    expect(entities.allIDs).toStrictEqual([user.id]);
+    expect(entities.byID).toStrictEqual({ [user.id]: user });
+  });
+
+  it("renders NotFoundPage when user does not exist", async () => {
+    const currentUser = randomCurrentUser();
+    const user = randomUser();
+    const store = createStore();
+    store.dispatch(userActions.set(buildEntityState([])));
+    jest.spyOn(userActions, "fetchOne").mockImplementation(
+      createAsyncThunk(`users/fetchOne`, () => {
+        throw new entityDatastore.EntityNotFoundException("users", user.id);
+      })
+    );
+
+    await act(async () => {
+      render(
+        <Fixture
+          authContextValue={{
+            isAuthenticated: true,
+            isAdmin: true,
+            user: currentUser,
+          }}
+          store={store}
+          initialEntries={[`/users/${user.id}`]}
+          route="/users/:id"
+        />
+      );
+    });
+
+    expect(userActions.fetchOne).toHaveBeenCalledWith(user.id);
+    screen.getByTestId("not-found-message");
   });
 });
