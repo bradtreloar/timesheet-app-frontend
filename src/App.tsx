@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Route, Switch } from "react-router-dom";
 import AdminRoute from "navigation/routes/AdminRoute";
 import GuestRoute from "navigation/routes/GuestRoute";
@@ -19,45 +19,19 @@ import TimesheetViewPage from "timesheets/pages/TimesheetViewPage";
 import UserIndexPage from "users/pages/UserIndexPage";
 import UserFormPage from "users/pages/UserFormPage";
 import UserDeletePage from "users/pages/UserDeletePage";
-import { useThunkDispatch } from "store/createStore";
-import { actions as timesheetActions } from "timesheets/store/timesheets";
-import { actions as settingsActions } from "settings/store/settings";
-import { actions as userActions } from "users/store/users";
-import { CurrentUser } from "auth/types";
-
-const initialiseStore = async (user: CurrentUser) => {
-  const dispatch = useThunkDispatch();
-  dispatch(timesheetActions.fetchAllBelongingTo(user.id));
-  dispatch(settingsActions.fetchAll());
-  if (user.isAdmin) {
-    dispatch(userActions.fetchAll());
-  }
-};
-
-const clearStore = async () => {
-  const dispatch = useThunkDispatch();
-  dispatch(timesheetActions.clear());
-  dispatch(settingsActions.clear());
-  dispatch(userActions.clear());
-};
 
 const App: React.FC = () => {
-  const [storeInitialised, setStoreInitialised] = React.useState(false);
-  const { user, userInitialised, error: authError } = useAuth();
+  const { userInitialised, error } = useAuth();
 
-  useEffect(() => {
-    if (userInitialised && user !== null && !storeInitialised) {
-      (async () => {
-        await initialiseStore(user);
-        setStoreInitialised(true);
-      })();
-    } else if (user === null && storeInitialised) {
-      clearStore();
-      setStoreInitialised(false);
-    }
-  }, [user, userInitialised, storeInitialised, setStoreInitialised]);
+  if (error !== null) {
+    return <ErrorPage message={error} />;
+  }
 
-  return userInitialised ? (
+  if (!userInitialised) {
+    return <LoadingPage />;
+  }
+
+  return (
     <Switch>
       <ProtectedRoute exact path="/">
         <TimesheetIndexPage />
@@ -102,10 +76,6 @@ const App: React.FC = () => {
         <NotFoundPage />
       </Route>
     </Switch>
-  ) : authError ? (
-    <ErrorPage message={authError} />
-  ) : (
-    <LoadingPage />
   );
 };
 
