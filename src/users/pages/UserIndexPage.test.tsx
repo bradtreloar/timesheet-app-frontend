@@ -16,6 +16,7 @@ import { buildEntityState } from "store/entity";
 import { MessagesProvider } from "messages/context";
 import { MockAuthProvider } from "fixtures/auth";
 import { AuthContextValue } from "auth/context";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 
 const Fixture: React.FC<{
   authContextValue: Partial<AuthContextValue>;
@@ -40,6 +41,11 @@ test("renders user index page", async () => {
   const users = randomUsers(3);
   const store = createStore();
   store.dispatch(userActions.set(buildEntityState(users)));
+  jest
+    .spyOn(userActions, "fetchAll")
+    .mockImplementation(
+      createAsyncThunk("users/fetchAll", () => Promise.resolve(users))
+    );
 
   await act(async () => {
     render(
@@ -59,4 +65,33 @@ test("renders user index page", async () => {
     screen.getByText(user.attributes.name);
     screen.getByText(user.attributes.email);
   });
+});
+
+it("fetches users on mount", async () => {
+  const currentUser = randomCurrentUser();
+  const users = randomUsers(3);
+  const store = createStore();
+  store.dispatch(userActions.set(buildEntityState([])));
+  jest
+    .spyOn(userActions, "fetchAll")
+    .mockImplementation(
+      createAsyncThunk("users/fetchAll", () => Promise.resolve(users))
+    );
+
+  await act(async () => {
+    render(
+      <Fixture
+        authContextValue={{
+          isAuthenticated: true,
+          isAdmin: true,
+          user: currentUser,
+        }}
+        store={store}
+      />
+    );
+  });
+
+  expect(userActions.fetchAll).toHaveBeenCalled();
+  const { entities } = store.getState().users;
+  expect(entities).toStrictEqual(buildEntityState(users).entities);
 });
