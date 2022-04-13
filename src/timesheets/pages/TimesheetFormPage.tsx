@@ -1,7 +1,9 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import PageTitle from "common/layouts/PageTitle";
-import TimesheetForm from "timesheets/forms/TimesheetForm";
+import TimesheetForm, {
+  processTimesheet,
+} from "timesheets/forms/TimesheetForm";
 import { useAuth } from "auth/context";
 import useFormController from "common/forms/useFormController";
 import DefaultLayout from "common/layouts/DefaultLayout";
@@ -24,28 +26,13 @@ import {
   Timesheet,
 } from "timesheets/types";
 import { DateTime } from "luxon";
+import { CurrentUser } from "auth/types";
 
-const TimesheetFormPage = () => {
+const useSubmitAction = (user: CurrentUser) => {
   const dispatch = useThunkDispatch();
-  const { user, logout, updateUser } = useAuth();
-  const { setMessage, dismissMessagesByTag } = useMessages();
-  const history = useHistory();
-  const { error } = useSelector(selectTimesheets);
 
-  if (!user) {
-    throw new Error(`User is not logged in.`);
-  }
-
-  const {
-    formError,
-    formPending,
-    handleSubmit: handleSubmitTimesheet,
-  } = useFormController<{
-    shiftsAttributes: ShiftAttributes[];
-    absencesAttributes: AbsenceAttributes[];
-    comment: string;
-  }>(async ({ shiftsAttributes, absencesAttributes, comment }) => {
-    const addTimesheetAction = await dispatch(
+  const addTimesheet = (comment: string) =>
+    dispatch(
       timesheetActions.addBelongingTo({
         attributes: {
           comment,
@@ -55,31 +42,22 @@ const TimesheetFormPage = () => {
         belongsToID: user.id,
       })
     );
-    if (addTimesheetAction.type === "timesheets/addBelongingTo/rejected") {
-      throw new Error(`Unable to create timesheet`);
-    }
-    const timesheet = addTimesheetAction.payload as Timesheet;
-    for (let shiftAttributes of shiftsAttributes) {
-      if (shiftActions.addBelongingTo) {
-        const action = await dispatch(
-          shiftActions.addBelongingTo({
-            attributes: shiftAttributes,
-            belongsToID: timesheet.id,
-          })
-        );
-      }
-    }
-    for (let absenceAttributes of absencesAttributes) {
-      if (absenceActions.addBelongingTo) {
-        const action = await dispatch(
-          absenceActions.addBelongingTo({
-            attributes: absenceAttributes,
-            belongsToID: timesheet.id,
-          })
-        );
-      }
-    }
-    const updateTimesheetAction = await dispatch(
+  const addShift = (timesheet: Timesheet, attributes: ShiftAttributes) =>
+    dispatch(
+      shiftActions.addBelongingTo({
+        attributes,
+        belongsToID: timesheet.id,
+      })
+    );
+  const addAbsence = (timesheet: Timesheet, attributes: AbsenceAttributes) =>
+    dispatch(
+      absenceActions.addBelongingTo({
+        attributes,
+        belongsToID: timesheet.id,
+      })
+    );
+  const submitTimesheet = (timesheet: Timesheet) =>
+    dispatch(
       timesheetActions.update(
         Object.assign({}, timesheet, {
           attributes: {
@@ -90,14 +68,49 @@ const TimesheetFormPage = () => {
         })
       )
     );
-    if (updateTimesheetAction.type === "timesheets/update/rejected") {
+
+  return async (values: ReturnType<typeof processTimesheet>) => {
+    const { shiftsAttributes, absencesAttributes, comment } = values;
+    const addTimesheetAction = await addTimesheet(comment);
+    if (addTimesheetAction.type === "timesheets/addBelongingTo/rejected") {
       throw new Error(`Unable to create timesheet`);
     }
+    const timesheet = addTimesheetAction.payload as Timesheet;
+    for (let attributes of shiftsAttributes) {
+      await addShift(timesheet, attributes);
+    }
+    for (let attributes of absencesAttributes) {
+      await addAbsence(timesheet, attributes);
+    }
+    const updateTimesheetAction = await submitTimesheet(timesheet);
+    if (updateTimesheetAction.type === "timesheets/update/rejected") {
+      throw new Error(`Unable to update timesheet`);
+    }
+  };
+};
+
+const TimesheetFormPage = () => {
+  const { user, logout, updateUser } = useAuth();
+  const { setMessage, dismissMessagesByTag } = useMessages();
+  const history = useHistory();
+  const { error } = useSelector(selectTimesheets);
+  const submitTimesheet = useSubmitAction(user as CurrentUser);
+
+  const {
+    formError,
+    formPending,
+    handleSubmit: handleSubmitTimesheet,
+  } = useFormController<{
+    shiftsAttributes: ShiftAttributes[];
+    absencesAttributes: AbsenceAttributes[];
+    comment: string;
+  }>(async (values) => {
+    await submitTimesheet(values);
     setMessage(
       "success",
       <>
         <p>Your timesheet has been submitted.</p>
-        <p>A copy has been emailed to you at {user?.email}</p>
+        <p>A copy has been emailed to you at {(user as CurrentUser).email}</p>
         <Button
           variant="outline-dark"
           onClick={async () => {
@@ -133,7 +146,7 @@ const TimesheetFormPage = () => {
         {formError && <div className="alert alert-danger">{formError}</div>}
         {error && <div className="alert alert-danger">{error}</div>}
         <TimesheetForm
-          defaultShiftValues={user.defaultShiftValues}
+          defaultShiftValues={(user as CurrentUser).defaultShiftValues}
           onSubmitTimesheet={handleSubmitTimesheet}
           onSubmitDefaultShiftValues={handleSubmitDefaultShifts}
           pending={formPending}

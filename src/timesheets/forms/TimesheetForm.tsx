@@ -114,7 +114,7 @@ const processShiftValues = (values: any): ShiftValues[] =>
  * @returns
  *   A array of Shift objects.
  */
-const processTimesheet = (
+export const processTimesheet = (
   values: any
 ): {
   shiftsAttributes: ShiftAttributes[];
