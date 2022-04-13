@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import PageTitle from "common/layouts/PageTitle";
 import { Button } from "react-bootstrap";
 import { useHistory, useParams } from "react-router-dom";
@@ -9,18 +9,52 @@ import { useMessages } from "messages/context";
 import Messages from "messages/Messages";
 import { useThunkDispatch } from "store/createStore";
 import NotFoundPage from "navigation/pages/NotFoundPage";
+import LoadingPage from "common/pages/LoadingPage";
+import { entityStateIsIdle } from "store/entity";
+
+const useUser = (id: string) => {
+  const dispatch = useThunkDispatch();
+  const usersState = useSelector(selectUsers);
+
+  const user = useMemo(() => {
+    const user = usersState.entities.byID[id];
+    return user !== undefined ? user : null;
+  }, [usersState]);
+
+  useEffect(() => {
+    if (entityStateIsIdle(usersState)) {
+      if (usersState.entities.byID[id] === undefined) {
+        (async () => {
+          await dispatch(userActions.fetchOne(id));
+        })();
+      }
+    }
+  }, [usersState]);
+
+  return {
+    user,
+    error: usersState.error,
+  };
+};
 
 const UserDeletePage = () => {
   const dispatch = useThunkDispatch();
-  const { id } = useParams<{ id?: string }>();
-  const { entities } = useSelector(selectUsers);
+  const { id } = useParams<{ id: string }>();
   const history = useHistory();
   const { setMessage } = useMessages();
+  const { user, error } = useUser(id);
 
-  const user = id !== undefined ? entities.byID[id] : undefined;
+  if (error !== null) {
+    if (error.name === "EntityNotFoundException") {
+      return <NotFoundPage />;
+    }
+    if (error.name === "UnauthorizedEntityAccessException") {
+      return <NotFoundPage />;
+    }
+  }
 
-  if (user === undefined) {
-    return <NotFoundPage />;
+  if (user === null) {
+    return <LoadingPage />;
   }
 
   const handleDeleteUser = async () => {

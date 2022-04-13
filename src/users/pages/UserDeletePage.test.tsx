@@ -18,6 +18,7 @@ import { buildEntityState } from "store/entity";
 import { AuthContextValue } from "auth/context";
 import { MockAuthProvider } from "fixtures/auth";
 import { MessagesProvider } from "messages/context";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 
 const Fixture: React.FC<{
   authContextValue: Partial<AuthContextValue>;
@@ -39,7 +40,7 @@ const Fixture: React.FC<{
   );
 };
 
-test("renders", async () => {
+it("renders", async () => {
   const currentUser = randomCurrentUser();
   const user = randomUser();
   const store = createStore();
@@ -62,7 +63,7 @@ test("renders", async () => {
   expect(screen.getByRole("heading")).toHaveTextContent(/delete user/i);
 });
 
-test("handles clicking delete button", async () => {
+it("handles clicking delete button", async () => {
   const currentUser = randomCurrentUser();
   const user = randomUser();
   const store = createStore();
@@ -94,4 +95,64 @@ test("handles clicking delete button", async () => {
   const { entities } = store.getState().users;
   expect(entities.allIDs).toStrictEqual([]);
   expect(entities.byID).toStrictEqual({});
+});
+
+it("fetches user on mount", async () => {
+  const currentUser = randomCurrentUser();
+  const user = randomUser();
+  const store = createStore();
+  store.dispatch(userActions.set(buildEntityState([])));
+  jest
+    .spyOn(userActions, "fetchOne")
+    .mockImplementation(
+      createAsyncThunk(`users/fetchOne`, () => Promise.resolve(user))
+    );
+
+  await act(async () => {
+    render(
+      <Fixture
+        authContextValue={{
+          isAuthenticated: true,
+          isAdmin: true,
+          user: currentUser,
+        }}
+        store={store}
+        initialEntries={[`/user/${user.id}/delete`]}
+      />
+    );
+  });
+
+  expect(userActions.fetchOne).toHaveBeenCalledWith(user.id);
+  const { entities } = store.getState().users;
+  expect(entities.allIDs).toStrictEqual([user.id]);
+  expect(entities.byID).toStrictEqual({ [user.id]: user });
+});
+
+it("renders NotFoundPage when user does not exist", async () => {
+  const currentUser = randomCurrentUser();
+  const user = randomUser();
+  const store = createStore();
+  store.dispatch(userActions.set(buildEntityState([])));
+  jest.spyOn(userActions, "fetchOne").mockImplementation(
+    createAsyncThunk(`users/fetchOne`, () => {
+      throw new entityDatastore.EntityNotFoundException("users", user.id);
+    })
+  );
+
+  await act(async () => {
+    render(
+      <Fixture
+        authContextValue={{
+          isAuthenticated: true,
+          isAdmin: true,
+          user: currentUser,
+        }}
+        store={store}
+        initialEntries={[`/user/${user.id}/delete`]}
+      />
+    );
+  });
+
+  expect(userActions.fetchOne).toHaveBeenCalledWith(user.id);
+  screen.getByTestId("not-found-message");
 });
