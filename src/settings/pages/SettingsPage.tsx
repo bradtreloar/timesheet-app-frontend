@@ -81,7 +81,7 @@ const SettingsPage = () => {
 
   const { formError, formPending, handleSubmit } = useFormController(
     async (values: SettingsValues) => {
-      const updatedSettings = getUpdatedSettings(values, settings);
+      const updatedSettings = getUpdatedSettings(values, settings as Setting[]);
 
       for (let setting of updatedSettings) {
         const action = await dispatch(settingsActions.update(setting));
