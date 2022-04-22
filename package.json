@@ -1,8 +1,7 @@
 {
-  "name": "frontend",
-  "homepage": "https://timesheet.allbizsupplies.biz",
-  "version": "0.2.0",
-  "private": true,
+  "name": "@bradtreloar/timesheet-app-frontend",
+  "description": "Frontend for Allbiz Timesheet app.",
+  "license": "MIT",
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.32",
     "@fortawesome/free-brands-svg-icons": "^5.15.1",
